@@ -1,0 +1,1183 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VGT AI Travel Planner</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+    }
+
+    /* Chat */
+    .msg {
+      max-width: 88%;
+      margin-bottom: 10px;
+    }
+
+    .msg-user {
+      margin-left: auto;
+    }
+
+    .msg-user .bubble {
+      background: #111827;
+      color: #fff;
+      border-radius: 16px 16px 4px 16px;
+    }
+
+    .msg-ai .bubble {
+      background: #f3f4f6;
+      color: #111827;
+      border-radius: 16px 16px 16px 4px;
+    }
+
+    .bubble {
+      padding: 10px 14px;
+      font-size: 13px;
+      line-height: 1.6;
+      word-break: break-word;
+    }
+
+    /* Loading */
+    .dots span {
+      animation: blink 1.4s infinite both;
+      font-size: 18px;
+    }
+
+    .dots span:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .dots span:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes blink {
+
+      0%,
+      80%,
+      100% {
+        opacity: .2
+      }
+
+      40% {
+        opacity: 1
+      }
+    }
+
+    /* Chip */
+    .chip {
+      padding: 6px 12px;
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 20px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: .15s;
+    }
+
+    .chip:hover {
+      background: #e5e7eb;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #d1d5db;
+      border-radius: 3px;
+    }
+
+    /* Day card animation */
+    .day-card {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .day-card.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* Timeline */
+    .timeline-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #8b5cf6;
+      background: white;
+      position: relative;
+      z-index: 2;
+      flex-shrink: 0;
+    }
+
+    .timeline-dot.active {
+      background: #8b5cf6;
+      box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.15);
+    }
+
+    .timeline-line {
+      width: 2px;
+      background: linear-gradient(to bottom, #8b5cf6, #c4b5fd);
+      position: absolute;
+      left: 5px;
+      top: 12px;
+      bottom: 0;
+    }
+
+    /* Schedule item */
+    .schedule-item {
+      padding: 8px 12px;
+      border-radius: 10px;
+      background: #f9fafb;
+      border-left: 3px solid #8b5cf6;
+      margin-bottom: 6px;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+
+    .schedule-item:hover {
+      background: #f3f0ff;
+      transform: translateX(2px);
+    }
+
+    .schedule-item .time {
+      font-size: 11px;
+      color: #8b5cf6;
+      font-weight: 600;
+    }
+
+    /* Meal tag */
+    .meal-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .meal-breakfast {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .meal-lunch {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .meal-dinner {
+      background: #fce7f3;
+      color: #9d174d;
+    }
+
+    /* Hotel tag */
+    .hotel-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 500;
+      background: #ecfdf5;
+      color: #065f46;
+    }
+
+    /* Typing cursor effect */
+    .typing-cursor::after {
+      content: '|';
+      animation: cursorBlink 0.8s infinite;
+      color: #8b5cf6;
+      font-weight: bold;
+    }
+
+    @keyframes cursorBlink {
+
+      0%,
+      50% {
+        opacity: 1
+      }
+
+      51%,
+      100% {
+        opacity: 0
+      }
+    }
+
+    /* Print styles */
+    @media print {
+
+      header,
+      .chat-panel,
+      .input-area {
+        display: none !important;
+      }
+
+      .itinerary-panel {
+        margin: 0 !important;
+        padding: 20px !important;
+      }
+    }
+
+    /* Summary bar */
+    .summary-bar {
+      display: flex;
+      gap: 16px;
+      padding: 12px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 12px;
+      color: white;
+    }
+
+    .summary-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+    }
+
+    /* Tab navigation for days */
+    .day-tab {
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 20px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+      border: 1px solid #e5e7eb;
+      background: white;
+      color: #6b7280;
+    }
+
+    .day-tab:hover {
+      background: #f3f4f6;
+    }
+
+    .day-tab.active {
+      background: #111827;
+      color: white;
+      border-color: #111827;
+    }
+
+    /* Progress bar */
+    .gen-progress {
+      height: 3px;
+      background: #e5e7eb;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .gen-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #8b5cf6, #3b82f6);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    /* Mobile toggle bar */
+    .mobile-toggle {
+      display: none;
+      background: white;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .mobile-toggle button {
+      flex: 1;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #9ca3af;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .mobile-toggle button.active {
+      color: #111827;
+      border-bottom-color: #111827;
+    }
+
+    /* ===== Mobile Responsive ===== */
+    @media (max-width: 1024px) {
+      .mobile-toggle {
+        display: flex;
+      }
+
+      .main-layout {
+        flex-direction: column;
+      }
+
+      .main-layout {
+        padding-top: 84px !important;
+      }
+
+      .chat-panel {
+        width: 100% !important;
+        min-width: 0 !important;
+        height: calc(100vh - 84px) !important;
+        border-right: none !important;
+      }
+
+      .itinerary-panel {
+        width: 100% !important;
+        height: calc(100vh - 84px) !important;
+      }
+
+      /* Hide panels based on toggle */
+      .chat-panel.mobile-hidden {
+        display: none !important;
+      }
+
+      .itinerary-panel.mobile-hidden {
+        display: none !important;
+      }
+
+      /* Summary bar: scroll horizontally */
+      .summary-bar {
+        overflow-x: auto;
+        gap: 6px;
+        padding: 10px 14px;
+      }
+
+      .summary-item {
+        flex-shrink: 0;
+        font-size: 11px;
+      }
+
+      /* Day card adjustments */
+      .day-card .px-5 {
+        padding-left: 14px;
+        padding-right: 14px;
+      }
+
+      .schedule-item {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
+
+      .schedule-item .time {
+        font-size: 10px;
+      }
+
+      .meal-tag {
+        font-size: 10px;
+        padding: 2px 6px;
+      }
+
+      .hotel-tag {
+        font-size: 10px;
+        padding: 3px 8px;
+      }
+
+      /* Day tabs scroll */
+      #dayTabs {
+        gap: 6px;
+      }
+
+      .day-tab {
+        padding: 5px 10px;
+        font-size: 11px;
+      }
+
+      /* Header adjustments */
+      header h1 {
+        font-size: 12px;
+      }
+
+      #printBtn,
+      #downloadBtn {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 text-gray-900 min-h-screen overflow-hidden">
+
+  <!-- ===== Top Bar ===== -->
+  <header class="fixed top-0 left-0 right-0 h-12 bg-white border-b flex items-center justify-between px-2 z-50">
+    <div class="flex items-center gap-2">
+      <div class="w-7 h-7 bg-gradient-to-br from-orange-500 to-rose-500 rounded-lg flex items-center justify-center">
+        <i class="fas fa-plane-departure text-white text-xs"></i>
+      </div>
+      <h1 class="font-bold text-sm hidden lg:block">VGT AI Travel Planner</h1>
+      <span class="text-[10px] px-2 py-0.5 bg-orange-100 text-orange-600 rounded-full font-medium hidden lg:inline-block">Pro</span>
+      <span id="usageBadge" class="text-[10px] px-2 py-0.5 bg-gray-100 text-gray-500 rounded-full hidden cursor-pointer"
+        title="클릭하면 상세 사용량을 볼 수 있습니다"></span>
+    </div>
+    <div class="flex items-center gap-1">
+      <select id="modelSelect" class="text-xs px-2 py-1.5 text-gray-500 font-medium border rounded-lg bg-white cursor-pointer outline-none">
+      </select>
+      <button id="printBtn"
+        class="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100 hidden" title="인쇄">
+        <i class="fas fa-print"></i> 인쇄
+      </button>
+      <button id="downloadBtn"
+        class="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100 hidden" title="다운로드">
+        <i class="fas fa-download"></i> PDF
+      </button>
+      <button id="settingsBtn" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"
+        title="API 설정">
+        <i class="fas fa-gear text-gray-500 text-sm"></i>
+      </button>
+      <button id="newChatBtn" class="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100"
+        title="새 일정">
+        <i class="fas fa-plus"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ===== Mobile Toggle ===== -->
+  <div id="mobileToggle" class="mobile-toggle fixed top-12 left-0 right-0 z-40">
+    <button id="toggleChat" class="active"><i class="fas fa-comments mr-1"></i>채팅</button>
+    <button id="toggleItinerary"><i class="fas fa-map-location-dot mr-1"></i>일정표</button>
+  </div>
+
+  <!-- ===== Main Layout ===== -->
+  <div class="main-layout flex pt-12" style="height:100vh;">
+
+    <!-- Left: Chat Panel -->
+    <div id="chatPanel" class="chat-panel bg-white border-r flex flex-col shrink-0"
+      style="height:calc(100vh - 48px); width: clamp(300px, 30vw, 400px);">
+
+      <div id="chatMessages" class="flex-1 overflow-y-auto p-4 space-y-2">
+        <!-- Welcome -->
+        <div id="welcomeBlock" class="text-center py-6">
+          <div
+            class="w-12 h-12 bg-gradient-to-br from-orange-500 to-rose-500 rounded-2xl flex items-center justify-center mx-auto mb-3">
+            <i class="fas fa-earth-americas text-white text-lg"></i>
+          </div>
+          <p class="text-sm font-semibold mb-1">AI 여행 일정 플래너</p>
+          <p class="text-xs text-gray-500 mb-4">여행지와 기간을 알려주시면<br>AI가 최적의 일정을 생성합니다</p>
+          <div class="flex flex-wrap gap-2 justify-center px-2">
+            <button class="chip" data-prompt="스페인 포르투갈 7박9일 일정 만들어줘">
+              <i class="fas fa-flag text-red-400 mr-1"></i>스페인+포르투갈 7박9일
+            </button>
+            <button class="chip" data-prompt="일본 오사카 교토 3박4일 가족여행 일정">
+              <i class="fas fa-torii-gate text-pink-400 mr-1"></i>오사카·교토 3박4일
+            </button>
+            <button class="chip" data-prompt="이탈리아 로마 피렌체 베네치아 5박7일 일정">
+              <i class="fas fa-landmark text-yellow-600 mr-1"></i>이탈리아 5박7일
+            </button>
+            <button class="chip" data-prompt="태국 방콕 치앙마이 4박6일 자유여행 일정">
+              <i class="fas fa-sun text-orange-400 mr-1"></i>태국 4박6일
+            </button>
+            <button class="chip" data-prompt="프랑스 파리 남프랑스 6박8일 허니문 일정">
+              <i class="fas fa-heart text-rose-400 mr-1"></i>프랑스 허니문 6박8일
+            </button>
+            <button class="chip" data-prompt="크로아티아 슬로베니아 5박7일 일정">
+              <i class="fas fa-water text-blue-400 mr-1"></i>크로아티아 5박7일
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input -->
+      <div class="input-area border-t p-3">
+        <div class="flex gap-2">
+          <textarea id="chatInput" rows="2" placeholder="여행지, 기간, 스타일을 알려주세요..."
+            class="flex-1 min-w-0 resize-none border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" style="font-size:16px;"></textarea>
+          <button id="sendBtn"
+            class="self-end bg-gray-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-700 transition shrink-0 disabled:opacity-30"
+            disabled>
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7" />
+            </svg>
+          </button>
+        </div>
+        <p class="text-[11px] text-gray-400 mt-1.5 text-center">수정 요청 가능 : "호텔 등급 올려줘", "자유시간 더 넣어줘"</p>
+      </div>
+    </div>
+
+    <!-- Right: Itinerary Panel -->
+    <div class="itinerary-panel flex-1 flex flex-col overflow-hidden min-w-0" style="height:calc(100vh - 48px);">
+
+      <!-- Empty State -->
+      <div id="emptyState" class="flex-1 flex items-center justify-center text-gray-400 text-sm">
+        <div class="text-center">
+          <i class="fas fa-map-marked-alt text-6xl text-gray-200 mb-4 block"></i>
+          <p>여행지와 기간을 입력하면</p>
+          <p>AI가 상세 일정표를 생성합니다</p>
+        </div>
+      </div>
+
+      <!-- Itinerary Content (hidden initially) -->
+      <div id="itineraryContent" class="flex-1 flex flex-col min-h-0 hidden">
+
+        <!-- Header summary -->
+        <div class="p-4 bg-white border-b shrink-0">
+          <div id="tripHeader" class="mb-3"></div>
+          <div id="dayTabs" class="flex gap-2 overflow-x-auto pb-1"></div>
+        </div>
+
+        <!-- Progress bar during generation -->
+        <div id="genProgressWrap" class="px-4 pt-2 bg-gray-50 hidden">
+          <div class="flex items-center gap-2 mb-1">
+            <i class="fas fa-wand-magic-sparkles text-violet-500 text-xs"></i>
+            <span id="genStatusText" class="text-xs text-gray-500">일정을 생성하고 있습니다...</span>
+          </div>
+          <div class="gen-progress">
+            <div id="genProgressBar" class="gen-progress-bar" style="width:0%"></div>
+          </div>
+        </div>
+
+        <!-- Day content area -->
+        <div id="dayContent" class="flex-1 overflow-y-auto min-h-0 p-4 bg-gray-50"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Usage Modal ===== -->
+  <div id="usageModal" class="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-6 w-[380px] max-w-[92vw]">
+      <h2 class="text-lg font-bold mb-3"><i class="fas fa-chart-bar text-violet-500 mr-1"></i> API 사용량</h2>
+      <div id="usageContent" class="space-y-3 text-sm"></div>
+      <div class="mt-4 flex justify-end">
+        <button id="closeUsageModal" class="px-4 py-2 text-sm rounded-xl border hover:bg-gray-50">닫기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== Settings Modal ===== -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center hidden">
+    <div class="bg-white rounded-2xl p-6 w-[420px] max-w-[92vw]">
+      <h2 class="text-lg font-bold mb-1">API 설정</h2>
+      <p class="text-xs text-gray-400 mb-4">Google Gemini API 키를 입력하세요. 브라우저 로컬에만 저장됩니다.</p>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Gemini API Key</label>
+          <input id="apiKeyInput" type="password" placeholder="AIzaSy..."
+            class="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
+          <p class="text-[11px] text-gray-400 mt-1"><a href="https://aistudio.google.com/apikey" target="_blank"
+              class="text-blue-500 underline">aistudio.google.com/apikey</a> 에서 무료 발급</p>
+        </div>
+        <div class="flex gap-2 justify-end pt-2">
+          <button id="cancelModal" class="px-4 py-2 text-sm rounded-xl border hover:bg-gray-50">취소</button>
+          <button id="saveModal"
+            class="px-4 py-2 text-sm rounded-xl bg-gray-900 text-white hover:bg-gray-700">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== JavaScript ===== -->
+  <script>
+    (function () {
+      const $ = id => document.getElementById(id);
+      const chatMessages = $('chatMessages');
+      const chatInput = $('chatInput');
+      const sendBtn = $('sendBtn');
+      const emptyState = $('emptyState');
+      const itineraryContent = $('itineraryContent');
+      const tripHeader = $('tripHeader');
+      const dayTabs = $('dayTabs');
+      const dayContent = $('dayContent');
+      const newChatBtn = $('newChatBtn');
+      const printBtn = $('printBtn');
+      const downloadBtn = $('downloadBtn');
+      const genProgressWrap = $('genProgressWrap');
+      const genProgressBar = $('genProgressBar');
+      const genStatusText = $('genStatusText');
+      const MODELS = {
+        'gemma-3-27b-it':   { name: 'Gemma-3-27B',      rpm: 30, rpd: 14400, maxTokens: 8192 },
+        'gemini-2.5-flash': { name: 'Gemini-2.5-Flash',  rpm: 5,  rpd: 20,    maxTokens: 65536 },
+        'gemini-3-flash-preview': { name: 'Gemini-3-Flash',  rpm: 5,  rpd: 20,    maxTokens: 65536 },
+      };
+      const modelSelect = $('modelSelect');
+      
+      // 모델 목록을 MODELS 객체 기반으로 자동 생성하여 드롭다운에 추가합니다.
+      modelSelect.innerHTML = '';
+      for (const [key, cfg] of Object.entries(MODELS)) {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = cfg.name;
+        modelSelect.appendChild(option);
+      }
+
+      let MODEL = modelSelect.value;
+      function getModelCfg() { return MODELS[MODEL]; }
+
+      // 저장된 모델 복원
+      const savedModel = localStorage.getItem('vgt_model');
+      if (savedModel && MODELS[savedModel]) { MODEL = savedModel; modelSelect.value = savedModel; }
+
+      modelSelect.addEventListener('change', () => {
+        MODEL = modelSelect.value;
+        localStorage.setItem('vgt_model', MODEL);
+        history = [];
+        const u = getUsage();
+        if (u.requests > 0) updateUsageBadge();
+        else { usageBadge.classList.add('hidden'); usageBadge.classList.remove('bg-red-100', 'text-red-600'); usageBadge.classList.add('bg-gray-100', 'text-gray-500'); }
+      });
+
+      const settingsBtn = $('settingsBtn');
+      const settingsModal = $('settingsModal');
+      const apiKeyInput = $('apiKeyInput');
+      const saveModal = $('saveModal');
+      const cancelModal = $('cancelModal');
+
+      let generating = false;
+      let currentTrip = null;
+      let history = [];
+
+      /* ── Usage Tracking ── */
+      const usageBadge = $('usageBadge');
+      const usageModal = $('usageModal');
+      const usageContent = $('usageContent');
+      const closeUsageModal = $('closeUsageModal');
+
+      // Load today's usage from localStorage
+      function getTodayKey() { return 'vgt_usage_' + MODEL + '_' + new Date().toISOString().slice(0, 10); }
+      function getUsage() {
+        try { return JSON.parse(localStorage.getItem(getTodayKey())) || { requests: 0, promptTokens: 0, outputTokens: 0, totalTokens: 0 }; }
+        catch { return { requests: 0, promptTokens: 0, outputTokens: 0, totalTokens: 0 }; }
+      }
+      function saveUsage(u) { localStorage.setItem(getTodayKey(), JSON.stringify(u)); }
+
+      function updateUsageBadge() {
+        const u = getUsage();
+        const cfg = getModelCfg();
+        const remain = Math.max(0, cfg.rpd - u.requests);
+        usageBadge.textContent = `${u.requests}회 · ${u.totalTokens.toLocaleString()} tokens`;
+        usageBadge.classList.remove('hidden');
+        if (remain < 100) {
+          usageBadge.classList.remove('bg-gray-100', 'text-gray-500');
+          usageBadge.classList.add('bg-red-100', 'text-red-600');
+        } else {
+          usageBadge.classList.remove('bg-red-100', 'text-red-600');
+          usageBadge.classList.add('bg-gray-100', 'text-gray-500');
+        }
+      }
+
+      function showUsageDetail() {
+        const u = getUsage();
+        const cfg = getModelCfg();
+        const remain = Math.max(0, cfg.rpd - u.requests);
+        const pct = Math.min(100, (u.requests / cfg.rpd) * 100);
+        usageContent.innerHTML = `
+        <div class="bg-gray-50 rounded-xl p-3 mb-2">
+          <div class="flex justify-between text-xs text-gray-500 mb-1"><span>현재 모델</span><span class="font-bold text-gray-800">${cfg.name}</span></div>
+          <div class="flex justify-between text-xs text-gray-500"><span>최대 출력 토큰</span><span class="font-mono">${cfg.maxTokens.toLocaleString()}</span></div>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3">
+          <div class="flex justify-between mb-1">
+            <span class="text-gray-600">오늘 요청 횟수</span>
+            <span class="font-bold">${u.requests} / ${cfg.rpd.toLocaleString()}</span>
+          </div>
+          <div class="w-full bg-gray-200 rounded-full h-2">
+            <div class="h-2 rounded-full transition-all ${pct > 80 ? 'bg-red-500' : pct > 50 ? 'bg-yellow-500' : 'bg-green-500'}" style="width:${pct}%"></div>
+          </div>
+          <p class="text-xs text-gray-400 mt-1">남은 횟수: <strong class="${remain < 100 ? 'text-red-500' : 'text-green-600'}">${remain}회</strong> (자정에 초기화)</p>
+        </div>
+        <div class="bg-gray-50 rounded-xl p-3 space-y-1">
+          <div class="flex justify-between"><span class="text-gray-600">입력 토큰</span><span class="font-mono">${u.promptTokens.toLocaleString()}</span></div>
+          <div class="flex justify-between"><span class="text-gray-600">출력 토큰</span><span class="font-mono">${u.outputTokens.toLocaleString()}</span></div>
+          <div class="flex justify-between border-t pt-1 mt-1"><span class="text-gray-600 font-semibold">총 토큰</span><span class="font-mono font-bold">${u.totalTokens.toLocaleString()}</span></div>
+        </div>
+        <div class="bg-blue-50 rounded-xl p-3 text-xs text-blue-700">
+          <i class="fas fa-circle-info mr-1"></i>
+          무료 한도: 분당 ${cfg.rpm}회, 하루 ${cfg.rpd.toLocaleString()}회<br>
+          사용량은 브라우저 기준 추적이며 실제와 다를 수 있습니다.
+        </div>
+      `;
+        usageModal.classList.remove('hidden');
+      }
+
+      usageBadge.addEventListener('click', showUsageDetail);
+      closeUsageModal.addEventListener('click', () => usageModal.classList.add('hidden'));
+      usageModal.addEventListener('click', e => { if (e.target === usageModal) usageModal.classList.add('hidden'); });
+
+      // Show badge if there's existing usage today
+      if (getUsage().requests > 0) updateUsageBadge();
+
+      /* ── Mobile Toggle ── */
+      const toggleChat = $('toggleChat');
+      const toggleItinerary = $('toggleItinerary');
+      const chatPanel = $('chatPanel');
+      const itineraryPanel = document.querySelector('.itinerary-panel');
+
+      function isMobile() { return window.innerWidth <= 1024; }
+
+      function showPanel(panel) {
+        toggleChat.classList.toggle('active', panel === 'chat');
+        toggleItinerary.classList.toggle('active', panel === 'itinerary');
+        if (isMobile()) {
+          chatPanel.classList.toggle('mobile-hidden', panel !== 'chat');
+          itineraryPanel.classList.toggle('mobile-hidden', panel !== 'itinerary');
+        }
+      }
+
+      toggleChat.addEventListener('click', () => showPanel('chat'));
+      toggleItinerary.addEventListener('click', () => showPanel('itinerary'));
+
+      window.addEventListener('resize', () => {
+        if (!isMobile()) {
+          chatPanel.classList.remove('mobile-hidden');
+          itineraryPanel.classList.remove('mobile-hidden');
+        } else {
+          const isChat = toggleChat.classList.contains('active');
+          showPanel(isChat ? 'chat' : 'itinerary');
+        }
+      });
+
+      if (isMobile()) itineraryPanel.classList.add('mobile-hidden');
+
+      /* ── Settings (API Key) ── */
+      function getKey() { return localStorage.getItem('vgt_gemini_key') || ''; }
+
+      settingsBtn.addEventListener('click', () => {
+        apiKeyInput.value = getKey();
+        settingsModal.classList.remove('hidden');
+      });
+      cancelModal.addEventListener('click', () => settingsModal.classList.add('hidden'));
+      settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
+      saveModal.addEventListener('click', () => {
+        localStorage.setItem('vgt_gemini_key', apiKeyInput.value.trim());
+        settingsModal.classList.add('hidden');
+      });
+
+
+      /* ── Day color palette ── */
+      const DAY_COLORS = ['#ef4444', '#f59e0b', '#10b981', '#f97316', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#64748b', '#14b8a6', '#e11d48', '#7c3aed'];
+
+      /* ── System Prompt ── */
+      const SYS = `You are a Korean travel planner AI. Generate detailed day-by-day travel itineraries.
+
+RESPOND WITH ONLY A VALID JSON OBJECT. No markdown, no explanation, no wrapping.
+
+JSON structure:
+{
+  "title": "여행 제목 (예: 스페인 & 포르투갈 7박 9일)",
+  "country": "방문 국가",
+  "duration": "N박 N일",
+  "cities": "도시1 → 도시2 → 도시3",
+  "days": [
+    {
+      "day": 1,
+      "date": "1일차",
+      "title": "출발지 → 도착지",
+      "subtitle": "간단한 테마 설명",
+      "city": "해당 도시",
+      "icon": "fa-plane-departure",
+      "items": [
+        { "time": "10:00", "text": "구체적 활동 설명", "icon": "fa-plane", "type": "transport" }
+      ],
+      "meals": { "breakfast": "조식 장소", "lunch": "중식 장소", "dinner": "석식 장소" },
+      "hotel": "호텔명 ★★★★",
+      "tip": "현지 여행 팁"
+    }
+  ]
+}
+
+Rules:
+- icon: Font Awesome 6 free solid icons (fa-plane, fa-hotel, fa-utensils, fa-walking, fa-bus, fa-train, fa-church, fa-landmark, fa-camera, fa-shopping-bag, fa-coffee, fa-music, fa-water, fa-mountain, fa-palette, fa-book, fa-wine-glass, fa-umbrella-beach, fa-moon, fa-city, fa-compass, fa-crown, fa-tree, fa-mug-hot, fa-taxi, fa-plane-arrival, fa-plane-departure)
+- type: one of "transport", "activity", "breakfast", "lunch", "dinner", "hotel", "shopping"
+- Each day should have 6-10 detailed schedule items with specific times
+- Include real restaurant names, real hotel names (4-5 star), real attraction names
+- All text in Korean
+- Include practical tips for each day
+- First day starts from 인천국제공항, last day returns to 인천국제공항
+- Output valid JSON only`;
+
+      /* ── Chat Helpers ── */
+      function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+      function addMsg(text, role) {
+        const wb = $('welcomeBlock');
+        if (wb) wb.remove();
+        const d = document.createElement('div');
+        d.className = 'msg msg-' + role;
+        d.innerHTML = '<div class="bubble">' + esc(text) + '</div>';
+        chatMessages.appendChild(d);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return d;
+      }
+
+      function addAiMsgHtml(html) {
+        const d = document.createElement('div');
+        d.className = 'msg msg-ai';
+        d.innerHTML = '<div class="bubble">' + html + '</div>';
+        chatMessages.appendChild(d);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        return d;
+      }
+
+      function addLoading() {
+        const d = document.createElement('div');
+        d.className = 'msg msg-ai';
+        d.id = 'loadingMsg';
+        d.innerHTML = '<div class="bubble dots"><span>&#9679;</span> <span>&#9679;</span> <span>&#9679;</span></div>';
+        chatMessages.appendChild(d);
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      }
+
+      function removeLoading() { const el = $('loadingMsg'); if (el) el.remove(); }
+
+      /* ── Extract JSON from AI response ── */
+      function extractJSON(text) {
+        // Try ```json ... ``` block first
+        const fenced = text.match(/```(?:json)?\s*\n?([\s\S]*?)```/);
+        if (fenced) text = fenced[1];
+        // Find first { to last }
+        const start = text.indexOf('{');
+        const end = text.lastIndexOf('}');
+        if (start === -1 || end === -1) return null;
+        let jsonStr = text.substring(start, end + 1);
+        // 1차 시도: 그대로 파싱
+        try { return JSON.parse(jsonStr); } catch (e1) { console.warn('JSON 1차 파싱 실패:', e1.message); }
+        // 2차 시도: 따옴표 없는 key를 따옴표로 감싸기
+        try {
+          const fixed = jsonStr.replace(/([{,]\s*)([a-zA-Z_]\w*)\s*:/g, '$1"$2":');
+          return JSON.parse(fixed);
+        } catch (e2) { console.warn('JSON 2차 파싱 실패:', e2.message); }
+        // 3차 시도: 후행 쉼표 제거
+        try {
+          const fixed = jsonStr.replace(/,\s*([}\]])/g, '$1');
+          return JSON.parse(fixed);
+        } catch (e3) { console.error('JSON 최종 파싱 실패:', e3.message); }
+        return null;
+      }
+
+      /* ── Normalize trip data (fill missing colors/icons) ── */
+      function normalizeTrip(trip) {
+        if (!trip || !trip.days) return null;
+        trip.days.forEach((day, i) => {
+          day.day = day.day || (i + 1);
+          day.date = day.date || ((i + 1) + '일차');
+          day.color = day.color || DAY_COLORS[i % DAY_COLORS.length];
+          day.icon = day.icon || 'fa-calendar-day';
+          day.items = day.items || [];
+          day.meals = day.meals || { breakfast: '-', lunch: '-', dinner: '-' };
+          day.hotel = day.hotel || '-';
+          day.tip = day.tip || '';
+          day.title = day.title || (day.date);
+          day.subtitle = day.subtitle || '';
+          day.city = day.city || '';
+          day.items.forEach(item => {
+            item.type = item.type || 'activity';
+            item.icon = item.icon || 'fa-circle';
+          });
+        });
+        trip.title = trip.title || '여행 일정';
+        trip.country = trip.country || '';
+        trip.duration = trip.duration || '';
+        trip.cities = trip.cities || '';
+        return trip;
+      }
+
+      /* ── Render Itinerary ── */
+      function renderTripHeader(trip) {
+        tripHeader.innerHTML = `
+        <div class="summary-bar">
+          <div class="summary-item"><i class="fas fa-globe"></i> ${trip.country}</div>
+          <div class="summary-item"><i class="fas fa-calendar-days"></i> ${trip.duration}</div>
+          <div class="summary-item"><i class="fas fa-route"></i> ${trip.cities}</div>
+        </div>
+      `;
+      }
+
+      function renderDayTabs(trip, activeDay = 0) {
+        dayTabs.innerHTML = `
+        <button class="day-tab ${activeDay === -1 ? 'active' : ''}" data-day="-1">
+          <i class="fas fa-list-ul mr-1"></i>전체
+        </button>
+      ` + trip.days.map((d, i) => `
+        <button class="day-tab ${activeDay === i ? 'active' : ''}" data-day="${i}">
+          ${d.date}
+        </button>
+      `).join('');
+
+        dayTabs.querySelectorAll('.day-tab').forEach(btn => {
+          btn.addEventListener('click', () => {
+            dayTabs.querySelectorAll('.day-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const dayIdx = parseInt(btn.dataset.day);
+            if (dayIdx === -1) renderAllDays(trip);
+            else renderSingleDay(trip.days[dayIdx]);
+          });
+        });
+      }
+
+      function getTypeColor(type) {
+        const colors = { transport: '#6366f1', activity: '#8b5cf6', breakfast: '#f59e0b', lunch: '#3b82f6', dinner: '#ec4899', hotel: '#10b981', shopping: '#f97316' };
+        return colors[type] || '#8b5cf6';
+      }
+
+      function renderDayCard(day) {
+        return `
+        <div class="day-card bg-white rounded-2xl shadow-sm border overflow-hidden mb-4">
+          <div class="px-5 py-4 border-b" style="background: linear-gradient(135deg, ${day.color}15, ${day.color}05);">
+            <div class="flex items-center gap-3">
+              <div class="rounded-xl flex items-center justify-center text-white">
+                <i style="color: ${day.color};" class="fas ${day.icon}"></i>
+              </div>
+              <div>
+                <div class="flex items-center gap-2">
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white" style="background: ${day.color};">D${day.day}</span>
+                  <h3 class="font-bold text-sm">${day.title}</h3>
+                </div>
+                <p class="text-xs text-gray-500 mt-0.5">${day.subtitle} · <i class="fas fa-map-marker-alt"></i> ${day.city}</p>
+              </div>
+            </div>
+          </div>
+          <div class="px-5 py-3">
+            ${day.items.map(item => `
+              <div class="schedule-item" style="border-left-color: ${getTypeColor(item.type)};">
+                <div class="flex items-start gap-2">
+                  <span class="time">${item.time}</span>
+                  <i class="fas ${item.icon} text-xs mt-0.5" style="color: ${getTypeColor(item.type)};"></i>
+                  <span class="text-gray-700">${item.text}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <div class="px-5 py-3 bg-gray-50 border-t">
+            <div class="flex flex-wrap gap-2 mb-2">
+              <span class="meal-tag meal-breakfast"><i class="fas fa-sun"></i> 조식: ${day.meals.breakfast}</span>
+              <span class="meal-tag meal-lunch"><i class="fas fa-cloud-sun"></i> 중식: ${day.meals.lunch}</span>
+              <span class="meal-tag meal-dinner"><i class="fas fa-moon"></i> 석식: ${day.meals.dinner}</span>
+            </div>
+            <span class="hotel-tag"><i class="fas fa-bed"></i> ${day.hotel}</span>
+            ${day.tip ? `<div class="mt-2 text-xs text-gray-500 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100"><i class="fas fa-lightbulb text-amber-500 mr-1"></i> <strong>TIP:</strong> ${day.tip}</div>` : ''}
+          </div>
+        </div>
+      `;
+      }
+
+      function renderSingleDay(day) {
+        dayContent.innerHTML = renderDayCard(day);
+        dayContent.scrollTop = 0;
+        requestAnimationFrame(() => dayContent.querySelectorAll('.day-card').forEach(c => c.classList.add('show')));
+      }
+
+      function renderAllDays(trip) {
+        dayContent.innerHTML = trip.days.map(d => renderDayCard(d)).join('');
+        dayContent.scrollTop = 0;
+        const cards = dayContent.querySelectorAll('.day-card');
+        cards.forEach((c, i) => setTimeout(() => c.classList.add('show'), i * 100));
+      }
+
+      /* ── Animated Rendering (day by day) ── */
+      async function animateTrip(trip) {
+        generating = true;
+        sendBtn.disabled = true;
+
+        emptyState.classList.add('hidden');
+        itineraryContent.classList.remove('hidden');
+        printBtn.classList.remove('hidden');
+        downloadBtn.classList.remove('hidden');
+        if (isMobile()) showPanel('itinerary');
+
+        renderTripHeader(trip);
+        genProgressWrap.classList.remove('hidden');
+        dayContent.innerHTML = '';
+        dayTabs.innerHTML = `<button class="day-tab active" data-day="-1"><i class="fas fa-list-ul mr-1"></i>전체</button>`;
+
+        const msgs = ['일정을 구성하고 있습니다...', '최적 동선을 계산합니다...', '맛집과 관광지를 선별합니다...', '숙소를 배정합니다...', '일정을 마무리합니다...'];
+
+        for (let i = 0; i < trip.days.length; i++) {
+          const day = trip.days[i];
+          genProgressBar.style.width = (((i + 1) / trip.days.length) * 100) + '%';
+          genStatusText.textContent = msgs[Math.min(i, msgs.length - 1)];
+          dayTabs.insertAdjacentHTML('beforeend', `<button class="day-tab" data-day="${i}">${day.date}</button>`);
+          dayContent.insertAdjacentHTML('beforeend', renderDayCard(day));
+          dayContent.scrollTop = dayContent.scrollHeight;
+          await sleep(300);
+          const cards = dayContent.querySelectorAll('.day-card');
+          cards[cards.length - 1].classList.add('show');
+          await sleep(200);
+        }
+
+        genProgressBar.style.width = '100%';
+        genStatusText.textContent = '일정 생성이 완료되었습니다!';
+        await sleep(500);
+        genProgressWrap.classList.add('hidden');
+        renderDayTabs(trip, -1);
+
+        currentTrip = trip;
+        generating = false;
+        sendBtn.disabled = !chatInput.value.trim();
+      }
+
+      function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+      /* ── API Call (Gemini) ── */
+      async function callAPI(userText) {
+        const apiKey = getKey();
+        if (!apiKey) { settingsModal.classList.remove('hidden'); return null; }
+
+        const wrappedText = SYS + '\n\n--- 사용자 요청 ---\n' + userText + '\n\n--- 지시 ---\n반드시 한국어로 작성하고, 설명 없이 순수 JSON 객체만 출력하세요. ```json 같은 마크다운 감싸기도 하지 마세요. 반드시 { 로 시작하고 } 로 끝나야 합니다.';
+        history.push({ role: 'user', parts: [{ text: wrappedText }] });
+        if (history.length > 6) history = history.slice(-6);
+
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
+
+        const body = {
+          contents: history,
+          generationConfig: {
+            temperature: 0.7,
+            maxOutputTokens: getModelCfg().maxTokens
+          }
+        };
+
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error?.message || 'API 오류 ' + res.status);
+        }
+
+        const data = await res.json();
+        console.log('API 전체 응답:', JSON.stringify(data, null, 2));
+        const content = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+        console.log('추출된 텍스트:', content);
+        history.push({ role: 'model', parts: [{ text: content }] });
+
+        // Track usage
+        const meta = data.usageMetadata;
+        if (meta) {
+          const u = getUsage();
+          u.requests += 1;
+          u.promptTokens += (meta.promptTokenCount || 0);
+          u.outputTokens += (meta.candidatesTokenCount || 0);
+          u.totalTokens += (meta.totalTokenCount || 0);
+          saveUsage(u);
+          updateUsageBadge();
+        }
+
+        return content;
+      }
+
+      /* ── Send ── */
+      async function send() {
+        const text = chatInput.value.trim();
+        if (!text || generating) return;
+
+        const apiKey = getKey();
+        if (!apiKey) { settingsModal.classList.remove('hidden'); return; }
+
+        generating = true;
+        chatInput.value = '';
+        sendBtn.disabled = true;
+
+        addMsg(text, 'user');
+        addLoading();
+
+        try {
+          const raw = await callAPI(text);
+          if (!raw) { removeLoading(); generating = false; return; }
+
+          const trip = normalizeTrip(extractJSON(raw));
+          if (!trip) {
+            removeLoading();
+            const preview = esc(raw.length > 1500 ? raw.substring(0, 1500) + '...' : raw);
+            addAiMsgHtml(`<div style="white-space:pre-wrap;font-size:12px;line-height:1.6;">${preview}</div><br><span style="font-size:11px;color:#999;">⚠ JSON 형식이 아니어서 일정표로 변환하지 못했습니다. 위는 AI 원본 응답입니다.</span>`);
+            generating = false;
+            sendBtn.disabled = false;
+            return;
+          }
+
+          removeLoading();
+          addAiMsgHtml(`<strong>${trip.title}</strong> 일정을 생성합니다... &#9992;`);
+          await animateTrip(trip);
+          addAiMsgHtml(`
+          <strong>${trip.title}</strong> 완성! &#127881;<br><br>
+          <span style="color:#6b7280;font-size:12px;">
+            &#128205; ${trip.cities}<br>
+            &#127860; 현지 맛집 & 전통요리 포함<br><br>
+            수정이 필요하면 말씀해주세요!<br>
+            <em>"호텔 등급 올려줘", "자유시간 추가해줘"</em>
+          </span>
+        `);
+        } catch (err) {
+          removeLoading();
+          addMsg('오류: ' + err.message, 'ai');
+          history.pop();
+        }
+
+        generating = false;
+        sendBtn.disabled = !chatInput.value.trim();
+      }
+
+      /* ── Input Handlers ── */
+      chatInput.addEventListener('input', () => { sendBtn.disabled = !chatInput.value.trim() || generating; });
+      chatInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
+      });
+      sendBtn.addEventListener('click', send);
+
+      /* ── Chip Handlers ── */
+      document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+        chatInput.value = c.dataset.prompt;
+        sendBtn.disabled = false;
+        send();
+      }));
+
+      /* ── New Chat ── */
+      newChatBtn.addEventListener('click', () => location.reload());
+
+      /* ── Print ── */
+      printBtn.addEventListener('click', () => window.print());
+
+      /* ── Download ── */
+      downloadBtn.addEventListener('click', () => {
+        if (!currentTrip) return;
+        let html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8">
+        <title>${currentTrip.title} 여행 일정표</title>
+        <style>
+          body{font-family:'Malgun Gothic',sans-serif;max-width:800px;margin:0 auto;padding:20px;color:#333}
+          h1{color:#111;border-bottom:2px solid #8b5cf6;padding-bottom:8px}
+          .day{margin:24px 0;page-break-inside:avoid} .day h2{color:#8b5cf6;margin-bottom:8px}
+          .item{padding:4px 0;border-bottom:1px dashed #eee;font-size:14px}
+          .time{color:#8b5cf6;font-weight:bold;min-width:70px;display:inline-block}
+          .meals{background:#f9fafb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:13px}
+          .hotel{color:#065f46;font-size:13px;margin-top:4px}
+          .tip{background:#fffbeb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:12px;color:#92400e}
+        </style></head><body><h1>${currentTrip.title}</h1><p>${currentTrip.cities}</p>`;
+        currentTrip.days.forEach(day => {
+          html += `<div class="day"><h2>DAY ${day.day} - ${day.title}</h2><p style="color:#888;font-size:12px">${day.subtitle} · ${day.city}</p>`;
+          day.items.forEach(item => { html += `<div class="item"><span class="time">${item.time}</span> ${item.text}</div>`; });
+          html += `<div class="meals">조식: ${day.meals.breakfast} | 중식: ${day.meals.lunch} | 석식: ${day.meals.dinner}</div>`;
+          html += `<div class="hotel">숙소: ${day.hotel}</div>`;
+          if (day.tip) html += `<div class="tip">TIP: ${day.tip}</div>`;
+          html += `</div>`;
+        });
+        html += `</body></html>`;
+        const blob = new Blob([html], { type: 'text/html' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `여행일정_${currentTrip.title.replace(/\s/g, '_')}.html`;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      /* ── Init: show settings if no key ── */
+      if (!getKey()) setTimeout(() => settingsModal.classList.remove('hidden'), 500);
+
+    })();
+  </script>
+
+</body>
+
+</html>

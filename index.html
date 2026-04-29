@@ -7,7 +7,7 @@
   <meta name="description" content="All-in-one utility app">
   <meta name="theme-color" content="#111111">
   <link rel="manifest" href="manifest.json">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -107,15 +107,30 @@
 
     .header-btn:hover { background: rgba(255,255,255,0.2); }
 
-    /* ── Page Content ── */
-    .page-content {
+    /* ── Content Area ── */
+    .content-area {
       flex: 1;
-      overflow-y: auto;
-      overflow-x: hidden;
+      overflow: hidden;
+      position: relative;
     }
 
+    .content-area iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: none;
+    }
+
+    .content-area iframe.active { display: block; }
+
     /* ── Home Page ── */
-    .home-page { padding: 20px; }
+    .home-page {
+      padding: 20px;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .home-page.hidden { display: none; }
 
     .greeting {
       font-size: 20px;
@@ -175,29 +190,6 @@
       line-height: 1.2;
     }
 
-    .quick-card {
-      background: #fff;
-      border-radius: 16px;
-      padding: 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-      cursor: pointer;
-      transition: transform 0.15s;
-    }
-
-    .quick-card:active { transform: scale(0.98); }
-
-    .quick-card-title {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 4px;
-    }
-
-    .quick-card-desc {
-      font-size: 12px;
-      color: #888;
-    }
-
     /* ── Bottom Nav ── */
     .bottom-nav {
       background: #fff;
@@ -206,6 +198,7 @@
       flex-shrink: 0;
       padding: 6px 0;
       padding-bottom: max(6px, env(safe-area-inset-bottom));
+      z-index: 10;
     }
 
     .nav-item {
@@ -227,7 +220,7 @@
     .nav-item.active { color: #111; }
     .nav-item:not(.active):hover { color: #666; }
 
-    /* ── Slide Menu (overlay) ── */
+    /* ── Slide Menu ── */
     .menu-overlay {
       position: absolute;
       inset: 0;
@@ -327,23 +320,9 @@
       justify-content: center;
     }
 
-    /* ── Placeholder Pages ── */
-    .placeholder-page {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      color: #ccc;
-      gap: 12px;
-    }
-
-    .placeholder-page .ph-icon { font-size: 48px; }
-    .placeholder-page .ph-text { font-size: 14px; }
-
     /* ── Scrollbar ── */
-    .page-content::-webkit-scrollbar { width: 4px; }
-    .page-content::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+    .home-page::-webkit-scrollbar { width: 4px; }
+    .home-page::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
   </style>
 </head>
 <body>
@@ -361,21 +340,21 @@
     </div>
   </div>
 
-  <!-- Page Content -->
-  <div class="page-content" id="pageContent">
+  <!-- Content Area -->
+  <div class="content-area">
 
-    <!-- Home -->
-    <div class="page home-page" id="page-home">
+    <!-- Home (inline) -->
+    <div class="home-page" id="homePage">
       <p class="greeting">Generalist</p>
       <p class="greeting-sub">All-in-one utility app</p>
 
       <p class="section-title">AI</p>
       <div class="app-grid">
-        <div class="app-icon" onclick="navigate('chat')">
+        <div class="app-icon" onclick="loadPage('ai_chatbot.html','chat')">
           <div class="icon-box" style="background:linear-gradient(135deg,#111,#333);color:#fff;">&#128172;</div>
           <span class="icon-label">AI 채팅</span>
         </div>
-        <div class="app-icon" onclick="navigate('travel')">
+        <div class="app-icon" onclick="loadPage('travel_planner.html','travel')">
           <div class="icon-box" style="background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;">&#9992;&#65039;</div>
           <span class="icon-label">여행플래너</span>
         </div>
@@ -391,15 +370,15 @@
 
       <p class="section-title">Fun</p>
       <div class="app-grid">
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('lotto.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">&#127922;</div>
           <span class="icon-label">로또</span>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('roulette.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#ec4899,#f43f5e);color:#fff;">&#127904;</div>
           <span class="icon-label">룰렛</span>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('scratch.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#eab308);color:#fff;">&#127915;</div>
           <span class="icon-label">복권</span>
         </div>
@@ -411,15 +390,15 @@
 
       <p class="section-title">Utility</p>
       <div class="app-grid">
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('calendar.html','util')">
           <div class="icon-box" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);color:#fff;">&#128197;</div>
           <span class="icon-label">캘린더</span>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('memo.html','util')">
           <div class="icon-box" style="background:linear-gradient(135deg,#14b8a6,#10b981);color:#fff;">&#128221;</div>
           <span class="icon-label">메모</span>
         </div>
-        <div class="app-icon">
+        <div class="app-icon" onclick="loadPage('timer.html','util')">
           <div class="icon-box" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;">&#9201;</div>
           <span class="icon-label">타이머</span>
         </div>
@@ -430,55 +409,30 @@
       </div>
     </div>
 
-    <!-- Placeholder: AI Chat -->
-    <div class="page placeholder-page" id="page-chat" style="display:none;">
-      <span class="ph-icon">&#128172;</span>
-      <span class="ph-text">AI 채팅</span>
-      <span style="font-size:12px;color:#bbb;">페이지 준비중</span>
-    </div>
-
-    <!-- Placeholder: Travel -->
-    <div class="page placeholder-page" id="page-travel" style="display:none;">
-      <span class="ph-icon">&#9992;&#65039;</span>
-      <span class="ph-text">여행 플래너</span>
-      <span style="font-size:12px;color:#bbb;">페이지 준비중</span>
-    </div>
-
-    <!-- Placeholder: Favorites -->
-    <div class="page placeholder-page" id="page-favorites" style="display:none;">
-      <span class="ph-icon">&#11088;</span>
-      <span class="ph-text">즐겨찾기</span>
-      <span style="font-size:12px;color:#bbb;">페이지 준비중</span>
-    </div>
-
-    <!-- Placeholder: Settings -->
-    <div class="page placeholder-page" id="page-settings" style="display:none;">
-      <span class="ph-icon">&#9881;&#65039;</span>
-      <span class="ph-text">설정</span>
-      <span style="font-size:12px;color:#bbb;">페이지 준비중</span>
-    </div>
+    <!-- iframe (sub pages load here) -->
+    <iframe id="pageFrame"></iframe>
 
   </div>
 
   <!-- Bottom Navigation -->
   <div class="bottom-nav">
-    <button class="nav-item active" onclick="navigate('home')">
+    <button class="nav-item active" data-nav="home" onclick="goHome()">
       <span class="nav-icon">&#127968;</span>
       <span>홈</span>
     </button>
-    <button class="nav-item" onclick="navigate('chat')">
+    <button class="nav-item" data-nav="chat" onclick="loadPage('ai_chatbot.html','chat')">
       <span class="nav-icon">&#128172;</span>
       <span>AI 채팅</span>
     </button>
-    <button class="nav-item" onclick="navigate('travel')">
+    <button class="nav-item" data-nav="travel" onclick="loadPage('travel_planner.html','travel')">
       <span class="nav-icon">&#9992;&#65039;</span>
       <span>여행</span>
     </button>
-    <button class="nav-item" onclick="navigate('favorites')">
+    <button class="nav-item" data-nav="favorites" onclick="loadPage('favorites.html','favorites')">
       <span class="nav-icon">&#11088;</span>
       <span>즐겨찾기</span>
     </button>
-    <button class="nav-item" onclick="navigate('settings')">
+    <button class="nav-item" data-nav="settings" onclick="loadPage('settings.html','settings')">
       <span class="nav-icon">&#9881;&#65039;</span>
       <span>설정</span>
     </button>
@@ -496,42 +450,42 @@
 
       <div class="menu-section">
         <p class="menu-section-title">AI</p>
-        <div class="menu-item" onclick="navigate('chat'); closeMenu();">
+        <div class="menu-item" onclick="loadPage('ai_chatbot.html','chat'); closeMenu();">
           <span class="mi-icon">&#128172;</span> AI 채팅
         </div>
-        <div class="menu-item" onclick="navigate('travel'); closeMenu();">
+        <div class="menu-item" onclick="loadPage('travel_planner.html','travel'); closeMenu();">
           <span class="mi-icon">&#9992;&#65039;</span> 여행 플래너
         </div>
       </div>
 
       <div class="menu-section">
         <p class="menu-section-title">Fun</p>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('lotto.html','fun'); closeMenu();">
           <span class="mi-icon">&#127922;</span> 로또
         </div>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('roulette.html','fun'); closeMenu();">
           <span class="mi-icon">&#127904;</span> 룰렛
         </div>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('scratch.html','fun'); closeMenu();">
           <span class="mi-icon">&#127915;</span> 복권
         </div>
       </div>
 
       <div class="menu-section">
         <p class="menu-section-title">Utility</p>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('calendar.html','util'); closeMenu();">
           <span class="mi-icon">&#128197;</span> 캘린더
         </div>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('memo.html','util'); closeMenu();">
           <span class="mi-icon">&#128221;</span> 메모
         </div>
-        <div class="menu-item">
+        <div class="menu-item" onclick="loadPage('timer.html','util'); closeMenu();">
           <span class="mi-icon">&#9201;</span> 타이머
         </div>
       </div>
 
       <div class="menu-section">
-        <div class="menu-item" onclick="navigate('settings'); closeMenu();">
+        <div class="menu-item" onclick="loadPage('settings.html','settings'); closeMenu();">
           <span class="mi-icon">&#9881;&#65039;</span> 설정
         </div>
       </div>
@@ -541,24 +495,33 @@
 </div>
 
 <script>
-  // ── Navigation ──
-  let currentPage = 'home';
+  const homePage = document.getElementById('homePage');
+  const pageFrame = document.getElementById('pageFrame');
+  let currentNav = 'home';
 
-  function navigate(page) {
-    document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
-    const target = document.getElementById('page-' + page);
-    if (target) {
-      target.style.display = '';
-      currentPage = page;
-    }
+  // ── Load sub-page in iframe ──
+  function loadPage(url, nav) {
+    homePage.classList.add('hidden');
+    pageFrame.classList.add('active');
+    pageFrame.src = url;
+    setActiveNav(nav);
+  }
 
-    document.querySelectorAll('.nav-item').forEach(btn => btn.classList.remove('active'));
-    const navBtns = document.querySelectorAll('.nav-item');
-    const navMap = ['home', 'chat', 'travel', 'favorites', 'settings'];
-    const idx = navMap.indexOf(page);
-    if (idx >= 0 && navBtns[idx]) navBtns[idx].classList.add('active');
+  // ── Go back to home ──
+  function goHome() {
+    pageFrame.classList.remove('active');
+    pageFrame.src = '';
+    homePage.classList.remove('hidden');
+    homePage.scrollTop = 0;
+    setActiveNav('home');
+  }
 
-    document.getElementById('pageContent').scrollTop = 0;
+  // ── Highlight active nav button ──
+  function setActiveNav(nav) {
+    currentNav = nav;
+    document.querySelectorAll('.nav-item').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.nav === nav);
+    });
   }
 
   // ── Slide Menu ──
