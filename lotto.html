@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>로또번호 생성기</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Segoe UI', sans-serif;
+    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+  }
+
+  .container {
+    background: rgba(255,255,255,0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px;
+    padding: 40px 30px;
+    width: 100%;
+    max-width: 480px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  h1 {
+    color: #fff;
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    color: rgba(255,255,255,0.5);
+    font-size: 0.9rem;
+    margin-bottom: 30px;
+  }
+
+  .result-section {
+    margin-bottom: 30px;
+    min-height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .balls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .ball {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+    box-shadow: inset 0 -4px 6px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.3);
+    animation: popIn 0.4s cubic-bezier(0.17,0.67,0.29,1.4) both;
+    position: relative;
+  }
+
+  .ball::after {
+    content: '';
+    position: absolute;
+    top: 7px;
+    left: 13px;
+    width: 13px;
+    height: 9px;
+    background: rgba(255,255,255,0.35);
+    border-radius: 50%;
+    transform: rotate(-20deg);
+  }
+
+  .ball:nth-child(1) { animation-delay: 0s; }
+  .ball:nth-child(2) { animation-delay: 0.1s; }
+  .ball:nth-child(3) { animation-delay: 0.2s; }
+  .ball:nth-child(4) { animation-delay: 0.3s; }
+  .ball:nth-child(5) { animation-delay: 0.4s; }
+  .ball:nth-child(6) { animation-delay: 0.5s; }
+
+  @keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .range-1 { background: linear-gradient(135deg, #fbc531, #e1b12c); }
+  .range-2 { background: linear-gradient(135deg, #0097e6, #0984e3); }
+  .range-3 { background: linear-gradient(135deg, #e84118, #c0392b); }
+  .range-4 { background: linear-gradient(135deg, #8c7ae6, #6c5ce7); }
+  .range-5 { background: linear-gradient(135deg, #44bd32, #27ae60); }
+
+  .btn {
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: #fff;
+    border: none;
+    padding: 14px 48px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 6px 20px rgba(231,76,60,0.4);
+    letter-spacing: 1px;
+  }
+
+  .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(231,76,60,0.5);
+  }
+
+  .btn:active {
+    transform: translateY(0);
+    box-shadow: 0 4px 12px rgba(231,76,60,0.3);
+  }
+
+  .empty-msg {
+    color: rgba(255,255,255,0.25);
+    font-size: 0.85rem;
+  }
+
+  @media (max-width: 420px) {
+    .container { padding: 28px 16px; }
+    h1 { font-size: 1.4rem; }
+    .ball { width: 46px; height: 46px; font-size: 1.05rem; }
+    .btn { padding: 12px 36px; font-size: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1>LOTTO 6/45</h1>
+  <p class="subtitle">행운의 번호를 뽑아보세요</p>
+
+  <div class="result-section">
+    <div class="balls" id="balls">
+      <span class="empty-msg">버튼을 눌러 번호를 생성하세요</span>
+    </div>
+  </div>
+
+  <button class="btn" onclick="generate()">번호 생성</button>
+</div>
+
+<script>
+  function getColorClass(n) {
+    if (n <= 10) return 'range-1';
+    if (n <= 20) return 'range-2';
+    if (n <= 30) return 'range-3';
+    if (n <= 40) return 'range-4';
+    return 'range-5';
+  }
+
+  function generate() {
+    const pool = Array.from({length: 45}, (_, i) => i + 1);
+    const picked = [];
+    for (let i = 0; i < 6; i++) {
+      const idx = Math.floor(Math.random() * pool.length);
+      picked.push(pool.splice(idx, 1)[0]);
+    }
+    picked.sort((a, b) => a - b);
+
+    const ballsEl = document.getElementById('balls');
+    ballsEl.innerHTML = '';
+
+    picked.forEach(n => {
+      const el = document.createElement('div');
+      el.className = `ball ${getColorClass(n)}`;
+      el.textContent = n;
+      ballsEl.appendChild(el);
+    });
+  }
+</script>
+
+</body>
+</html>
