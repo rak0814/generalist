@@ -56,7 +56,6 @@
   <header>
     <select id="modelSelect"></select>
     <span id="usageBadge" class="usage-badge"></span>
-    <button onclick="openModal()" style="margin-left:auto; background:#333; border:none; color:#aaa; padding:6px 12px; border-radius:8px; font-size:12px; cursor:pointer;">API 키 변경</button>
   </header>
 
   <div class="chat" id="chat"></div>
@@ -67,18 +66,6 @@
   </div>
 </div>
 
-  <!-- API 키 모달 -->
-  <div class="modal-overlay" id="modal">
-    <div class="modal">
-      <h2>API 키 설정</h2>
-      <p>Google AI Studio에서 발급한 키를 입력하세요</p>
-      <input type="password" id="keyInput" placeholder="AIzaSy...">
-      <div class="modal-btns">
-        <button class="btn-cancel" onclick="closeModal()">취소</button>
-        <button class="btn-save" onclick="saveKey()">저장</button>
-      </div>
-    </div>
-  </div>
 
   <!-- 사용량 모달 -->
   <div class="modal-overlay" id="usageModal">
@@ -101,8 +88,6 @@
     const chat = document.getElementById('chat');
     const input = document.getElementById('input');
     const sendBtn = document.getElementById('sendBtn');
-    const modal = document.getElementById('modal');
-    const keyInput = document.getElementById('keyInput');
     const modelSelect = document.getElementById('modelSelect');
     const usageBadge = document.getElementById('usageBadge');
     const usageModal = document.getElementById('usageModal');
@@ -137,25 +122,6 @@
     let busy = false;
     let history = [];
 
-    function getKey() { return localStorage.getItem('gemini_flash_key') || ''; }
-
-    function openModal() {
-      keyInput.value = getKey();
-      modal.classList.add('show');
-      keyInput.focus();
-    }
-    function closeModal() { modal.classList.remove('show'); }
-
-    function saveKey() {
-      const k = keyInput.value.trim();
-      if (!k) return;
-      localStorage.setItem('gemini_flash_key', k);
-      closeModal();
-    }
-
-    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
-    keyInput.addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
-    if (!getKey()) openModal();
 
     /* ── Usage Tracking ── */
     function getTodayKey() { return 'chat_usage_' + MODEL + '_' + new Date().toISOString().slice(0, 10); }
@@ -227,8 +193,6 @@
     async function send() {
       const text = input.value.trim();
       if (!text || busy) return;
-      const key = getKey();
-      if (!key) { openModal(); return; }
 
       busy = true;
       input.value = '';
@@ -239,11 +203,11 @@
       history.push({ role: 'user', parts: [{ text }] });
 
       try {
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`;
-        const res = await fetch(url, {
+        const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
+            model: MODEL,
             contents: history,
             generationConfig: { temperature: 0.7, maxOutputTokens: cfg().maxTokens }
           })

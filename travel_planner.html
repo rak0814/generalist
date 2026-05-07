@@ -433,10 +433,6 @@
         class="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100 hidden" title="다운로드">
         <i class="fas fa-download"></i> PDF
       </button>
-      <button id="settingsBtn" class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100"
-        title="API 설정">
-        <i class="fas fa-gear text-gray-500 text-sm"></i>
-      </button>
       <button id="newChatBtn" class="text-xs text-gray-500 hover:text-gray-800 px-2 py-1.5 rounded-lg hover:bg-gray-100"
         title="새 일정">
         <i class="fas fa-plus"></i>
@@ -555,27 +551,6 @@
     </div>
   </div>
 
-  <!-- ===== Settings Modal ===== -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/40 z-[200] flex items-center justify-center hidden">
-    <div class="bg-white rounded-2xl p-6 w-[420px] max-w-[92vw]">
-      <h2 class="text-lg font-bold mb-1">API 설정</h2>
-      <p class="text-xs text-gray-400 mb-4">Google Gemini API 키를 입력하세요. 브라우저 로컬에만 저장됩니다.</p>
-      <div class="space-y-4">
-        <div>
-          <label class="block text-sm font-medium mb-1">Gemini API Key</label>
-          <input id="apiKeyInput" type="password" placeholder="AIzaSy..."
-            class="w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500">
-          <p class="text-[11px] text-gray-400 mt-1"><a href="https://aistudio.google.com/apikey" target="_blank"
-              class="text-blue-500 underline">aistudio.google.com/apikey</a> 에서 무료 발급</p>
-        </div>
-        <div class="flex gap-2 justify-end pt-2">
-          <button id="cancelModal" class="px-4 py-2 text-sm rounded-xl border hover:bg-gray-50">취소</button>
-          <button id="saveModal"
-            class="px-4 py-2 text-sm rounded-xl bg-gray-900 text-white hover:bg-gray-700">저장</button>
-        </div>
-      </div>
-    </div>
-  </div>
 
   <!-- ===== JavaScript ===== -->
   <script>
@@ -626,12 +601,6 @@
         if (u.requests > 0) updateUsageBadge();
         else { usageBadge.classList.add('hidden'); usageBadge.classList.remove('bg-red-100', 'text-red-600'); usageBadge.classList.add('bg-gray-100', 'text-gray-500'); }
       });
-
-      const settingsBtn = $('settingsBtn');
-      const settingsModal = $('settingsModal');
-      const apiKeyInput = $('apiKeyInput');
-      const saveModal = $('saveModal');
-      const cancelModal = $('cancelModal');
 
       let generating = false;
       let currentTrip = null;
@@ -739,19 +708,6 @@
 
       if (isMobile()) itineraryPanel.classList.add('mobile-hidden');
 
-      /* ── Settings (API Key) ── */
-      function getKey() { return localStorage.getItem('vgt_gemini_key') || ''; }
-
-      settingsBtn.addEventListener('click', () => {
-        apiKeyInput.value = getKey();
-        settingsModal.classList.remove('hidden');
-      });
-      cancelModal.addEventListener('click', () => settingsModal.classList.add('hidden'));
-      settingsModal.addEventListener('click', e => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
-      saveModal.addEventListener('click', () => {
-        localStorage.setItem('vgt_gemini_key', apiKeyInput.value.trim());
-        settingsModal.classList.add('hidden');
-      });
 
 
       /* ── Day color palette ── */
@@ -1020,27 +976,21 @@ Rules:
 
       /* ── API Call (Gemini) ── */
       async function callAPI(userText) {
-        const apiKey = getKey();
-        if (!apiKey) { settingsModal.classList.remove('hidden'); return null; }
-
         const wrappedText = SYS + '\n\n--- 사용자 요청 ---\n' + userText + '\n\n--- 지시 ---\n반드시 한국어로 작성하고, 설명 없이 순수 JSON 객체만 출력하세요. ```json 같은 마크다운 감싸기도 하지 마세요. 반드시 { 로 시작하고 } 로 끝나야 합니다.';
         history.push({ role: 'user', parts: [{ text: wrappedText }] });
         if (history.length > 6) history = history.slice(-6);
 
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`;
-
-        const body = {
-          contents: history,
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: getModelCfg().maxTokens
-          }
-        };
-
-        const res = await fetch(url, {
+        const res = await fetch('/api/gemini', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body)
+          body: JSON.stringify({
+            model: MODEL,
+            contents: history,
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: getModelCfg().maxTokens
+            }
+          })
         });
 
         if (!res.ok) {
@@ -1073,9 +1023,6 @@ Rules:
       async function send() {
         const text = chatInput.value.trim();
         if (!text || generating) return;
-
-        const apiKey = getKey();
-        if (!apiKey) { settingsModal.classList.remove('hidden'); return; }
 
         generating = true;
         chatInput.value = '';
@@ -1172,8 +1119,6 @@ Rules:
         URL.revokeObjectURL(a.href);
       });
 
-      /* ── Init: show settings if no key ── */
-      if (!getKey()) setTimeout(() => settingsModal.classList.remove('hidden'), 500);
 
     })();
   </script>
