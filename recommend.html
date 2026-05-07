@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>원형 달력</title>
+    <style>
+body {
+    margin: 0;
+    overflow: hidden;
+    touch-action: none;
+}
+
+#app {
+    font-family: Arial, sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background-color: #f0f0f0;
+    background-image: url(https://contents.verygoodtour.com/Images/common/cloud_bg.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    position: relative;
+}
+
+        #calendar {
+            width: 85vmin;
+            height: 85vmin;
+            border-radius: 50%;
+            position: relative;
+            transition: transform 0.5s ease;
+            border: 5px dotted #266ac9;
+        }
+
+        .month-circle {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 4vmin;
+            pointer-events: none;
+        }
+
+        .center-card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 40vmin;
+            height: 50vmin;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            transform: translate(-50%, -50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: normal;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            border: 10px solid transparent;
+            border-image: linear-gradient(to bottom right, #b827fc 0%, #2c90fc 25%, #b8fd33 50%, #fec837 75%, #fd1892 100%);
+            border-image-slice: 1;
+        }
+
+        .center-card.active {
+            opacity: 1;
+        }
+
+        .center-card h2 {
+            font-size: 3vmin;
+            margin: 0;
+            color: #3498db;
+        }
+
+        .center-card p {
+            font-size: 2vmin;
+            color: #555;
+        }
+        .center-card img {
+            width: 100%;
+            margin-top: 10px;
+        }        
+    </style>
+</head>
+<body>
+
+  <div id="app">
+    <div id="calendar"></div>
+
+    <div class="center-card active" id="centerCard">
+      <h2>1월</h2>
+      <p>추천 여행지<br><img src="https://contents.verygoodtour.com/content/210/SE/0000/STO/image/1995833_2.jpg" alt=""><a href="#">관련상품 더보기</a></p>
+      <div style="position: absolute; bottom: 2%; display: flex;">
+          <button id="prevBtn" style="font-size: 2vmin; margin-right: 10px;">이전</button>
+          <button id="nextBtn" style="font-size: 2vmin;">다음</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+    const months = [
+        { name: "1월", content: '<img src="https://contents.verygoodtour.com/content/210/SE/0000/STO/image/1995833_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "2월", content: '<img src="https://contents.verygoodtour.com/content/210/NO/0000/OL2/image/1995815_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "3월", content: '<img src="https://contents.verygoodtour.com/content/210/SE/0000/STO/image/1995833_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "4월", content: '<img src="https://contents.verygoodtour.com/content/210/HR/0000/CD1/image/1859546_1.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "5월", content: '<img src="https://contents.verygoodtour.com/content/320/MN/0000/ULN/image/1966131_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "6월", content: '<img src="https://contents.verygoodtour.com/content/210/PL/0000/KRK/image/1990609_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "7월", content: '<img src="https://contents.verygoodtour.com/content/210/SE/0000/STO/image/1995833_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "8월", content: '<img src="https://contents.verygoodtour.com/content/210/NO/0000/OL2/image/1995815_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "9월", content: '<img src="https://contents.verygoodtour.com/content/210/SE/0000/STO/image/1995833_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "10월", content: '<img src="https://contents.verygoodtour.com/content/210/HR/0000/CD1/image/1859546_1.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "11월", content: '<img src="https://contents.verygoodtour.com/content/320/MN/0000/ULN/image/1966131_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+        { name: "12월", content: '<img src="https://contents.verygoodtour.com/content/210/PL/0000/KRK/image/1990609_2.jpg" alt=""><a href="#">관련상품 더보기</a>' },
+    ];
+
+    const calendar = document.getElementById('calendar');
+    const centerCard = document.getElementById('centerCard');
+    const title = centerCard.querySelector('h2');
+    const description = centerCard.querySelector('p');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+
+    // 원형으로 월 배치
+    months.forEach((month, index) => {
+        const monthDiv = document.createElement('div');
+        monthDiv.className = 'month-circle';
+        monthDiv.innerText = month.name;
+        
+        const angle = (index / months.length) * 360;
+        monthDiv.style.transform = `rotate(${angle}deg) translateY(-45%)`;
+        
+        calendar.appendChild(monthDiv);
+    });
+
+    let currentAngle = 0;
+    const rotationStep = 30;
+
+    function updateCard() {
+        const currentIndex = Math.round(-currentAngle / rotationStep) % months.length;
+        const monthData = months[(currentIndex + months.length) % months.length];
+        title.innerText = monthData.name;
+        description.innerHTML = `추천 여행지<br>${monthData.content}`;
+
+        centerCard.classList.remove('active');
+        setTimeout(() => {
+            centerCard.classList.add('active');
+        }, 100);
+    }
+
+    function rotateCalendar(direction) {
+        currentAngle += direction * rotationStep;
+        calendar.style.transform = `rotate(${currentAngle}deg)`;
+        updateCard();
+    }
+
+    // PC용 스크롤 이벤트
+
+    //전체 영역
+    // window.addEventListener('wheel', (event) => {
+    //     if (event.deltaY > 0) {
+    //         rotateCalendar(-1);
+    //     } else {
+    //         rotateCalendar(1);
+    //     }
+    //     event.preventDefault();
+    // });
+
+
+    //달력 영역만
+    window.addEventListener('wheel', (event) => {
+        const isInside = calendar.contains(event.target) || centerCard.contains(event.target);
+
+        if (isInside) {
+            if (event.deltaY > 0) {
+                rotateCalendar(-1);
+            } else {
+                rotateCalendar(1);
+            }
+            event.preventDefault(); // calendar 또는 centerCard 안에서만 휠 회전
+        }
+    }, { passive: false });
+
+    // 모바일/PC 공통 버튼 클릭
+    prevBtn.addEventListener('click', () => rotateCalendar(1));
+    nextBtn.addEventListener('click', () => rotateCalendar(-1));
+
+
+
+
+
+  // 모바일터치 (달력/카드 영역만)
+
+  let startY = 0;
+  let isTouchInsideCalendar = false;
+
+  window.addEventListener('touchstart', (e) => {
+    isTouchInsideCalendar = calendar.contains(e.target) || centerCard.contains(e.target);
+    if (isTouchInsideCalendar) {
+      startY = e.touches[0].clientY;
+    }
+  }, { passive: true });
+
+  window.addEventListener('touchmove', (e) => {
+    if (isTouchInsideCalendar) {
+      e.preventDefault(); // 터치 스와이프 시 페이지 스크롤 방지
+    }
+  }, { passive: false });
+
+  window.addEventListener('touchend', (e) => {
+    if (!isTouchInsideCalendar) return;
+
+    const endY = e.changedTouches[0].clientY;
+    const deltaY = startY - endY;
+
+    if (Math.abs(deltaY) < 30) return; // 작은 움직임은 무시
+
+    if (deltaY > 0) {
+      // 위로 스와이프 → 다음 달
+      rotateCalendar(-1);
+    } else {
+      // 아래로 스와이프 → 이전 달
+      rotateCalendar(1);
+    }
+  });
+
+
+
+</script>
+
+</body>
+</html>
