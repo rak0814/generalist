@@ -348,26 +348,6 @@
       <p class="greeting">Generalist</p>
       <p class="greeting-sub">All-in-one utility app</p>
 
-      <p class="section-title">AI</p>
-      <div class="app-grid">
-        <div class="app-icon" onclick="loadPage('ai_chatbot.html','chat')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#111,#333);color:#fff;">&#128172;</div>
-          <span class="icon-label">AI 채팅</span>
-        </div>
-        <div class="app-icon" onclick="loadPage('travel_planner.html','travel')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#f97316,#ef4444);color:#fff;">&#9992;&#65039;</div>
-          <span class="icon-label">여행플래너</span>
-        </div>
-        <div class="app-icon">
-          <div class="icon-box" style="background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;">&#129302;</div>
-          <span class="icon-label">준비중</span>
-        </div>
-        <div class="app-icon">
-          <div class="icon-box" style="background:linear-gradient(135deg,#8b5cf6,#a855f7);color:#fff;">&#129302;</div>
-          <span class="icon-label">준비중</span>
-        </div>
-      </div>
-
       <p class="section-title">Fun</p>
       <div class="app-grid">
         <div class="app-icon" onclick="loadPage('lotto.html','fun')">
@@ -382,9 +362,9 @@
           <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#eab308);color:#fff;">&#127915;</div>
           <span class="icon-label">복권</span>
         </div>
-        <div class="app-icon">
-          <div class="icon-box" style="background:linear-gradient(135deg,#64748b,#94a3b8);color:#fff;">&#10010;</div>
-          <span class="icon-label">더보기</span>
+        <div class="app-icon" onclick="loadPage('slot.html','fun')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#302b63,#24243e);color:#ffd700;">&#127920;</div>
+          <span class="icon-label">슬롯머신</span>
         </div>
       </div>
 
@@ -438,6 +418,7 @@
     </button>
   </div>
 
+
   <!-- Slide Menu -->
   <div class="menu-overlay" id="menuOverlay">
     <div class="menu-backdrop" onclick="closeMenu()"></div>
@@ -449,44 +430,34 @@
       </div>
 
       <div class="menu-section">
-        <p class="menu-section-title">AI</p>
-        <div class="menu-item" onclick="loadPage('ai_chatbot.html','chat'); closeMenu();">
-          <span class="mi-icon">&#128172;</span> AI 채팅
+        <p class="menu-section-title">Info</p>
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#128227;</span> 공지사항
         </div>
-        <div class="menu-item" onclick="loadPage('travel_planner.html','travel'); closeMenu();">
-          <span class="mi-icon">&#9992;&#65039;</span> 여행 플래너
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#128276;</span> 알림
         </div>
-      </div>
-
-      <div class="menu-section">
-        <p class="menu-section-title">Fun</p>
-        <div class="menu-item" onclick="loadPage('lotto.html','fun'); closeMenu();">
-          <span class="mi-icon">&#127922;</span> 로또
-        </div>
-        <div class="menu-item" onclick="loadPage('roulette.html','fun'); closeMenu();">
-          <span class="mi-icon">&#127904;</span> 룰렛
-        </div>
-        <div class="menu-item" onclick="loadPage('scratch.html','fun'); closeMenu();">
-          <span class="mi-icon">&#127915;</span> 복권
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#127381;</span> 업데이트
         </div>
       </div>
 
       <div class="menu-section">
-        <p class="menu-section-title">Utility</p>
-        <div class="menu-item" onclick="loadPage('calendar.html','util'); closeMenu();">
-          <span class="mi-icon">&#128197;</span> 캘린더
+        <p class="menu-section-title">Support</p>
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#128172;</span> 문의하기
         </div>
-        <div class="menu-item" onclick="loadPage('memo.html','util'); closeMenu();">
-          <span class="mi-icon">&#128221;</span> 메모
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#10067;</span> 도움말
         </div>
-        <div class="menu-item" onclick="loadPage('timer.html','util'); closeMenu();">
-          <span class="mi-icon">&#9201;</span> 타이머
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#128196;</span> 이용약관
         </div>
       </div>
 
       <div class="menu-section">
-        <div class="menu-item" onclick="loadPage('settings.html','settings'); closeMenu();">
-          <span class="mi-icon">&#9881;&#65039;</span> 설정
+        <div class="menu-item" onclick="closeMenu();">
+          <span class="mi-icon">&#128712;</span> 앱 정보
         </div>
       </div>
     </div>
