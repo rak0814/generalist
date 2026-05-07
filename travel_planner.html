@@ -980,7 +980,7 @@ Rules:
         history.push({ role: 'user', parts: [{ text: wrappedText }] });
         if (history.length > 6) history = history.slice(-6);
 
-        const res = await fetch('/api/gemini', {
+        const res = await fetch('/api/travel', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

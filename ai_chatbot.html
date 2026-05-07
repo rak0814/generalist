@@ -203,7 +203,7 @@
       history.push({ role: 'user', parts: [{ text }] });
 
       try {
-        const res = await fetch('/api/gemini', {
+        const res = await fetch('/api/chatbot', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
