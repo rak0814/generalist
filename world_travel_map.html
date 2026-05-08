@@ -857,13 +857,17 @@ const COUNTRY_PROMPT = `당신은 여행 정보 전문가입니다. 주어진 �
 function getCachedCountry(name) {
   try {
     const raw = localStorage.getItem('wtm_' + name);
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached._model === AI_MODEL) return cached;
+    }
   } catch(e) {}
   return null;
 }
 
 function setCachedCountry(name, data) {
   try {
+    data._model = AI_MODEL;
     localStorage.setItem('wtm_' + name, JSON.stringify(data));
   } catch(e) {}
 }
