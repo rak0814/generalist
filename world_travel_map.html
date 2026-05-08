@@ -542,24 +542,27 @@
   bottom:20px;
   left:50%;
   transform:translateX(-50%);
-  padding:14px 24px;
+  padding:10px 20px;
   background:rgba(15,20,35,0.97);
   border:1px solid rgba(99,102,241,0.4);
-  border-radius:16px;
-  text-align:center;
+  border-radius:40px;
   z-index:150;
   backdrop-filter:blur(20px);
   box-shadow:0 12px 40px rgba(0,0,0,0.5);
-  min-width:200px;
   animation: bubbleIn 0.3s ease;
+  display:none;
+  flex-direction:row;
+  align-items:center;
+  gap:10px;
+  white-space:nowrap;
 ">
-  <div id="bubbleFlag" style="font-size:36px;margin-bottom:6px;"></div>
-  <div id="bubbleName" style="font-size:18px;font-weight:700;color:#fff;"></div>
-  <div id="bubbleNameEn" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+  <span id="bubbleFlag"></span>
+  <span id="bubbleNameEn" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:700;"></span>
+  <span id="bubbleName" style="font-size:15px;font-weight:700;color:#fff;"></span>
   <button id="bubbleDetailBtn" onclick="openBubbleDetail()" style="
-    margin-top:12px; padding:9px 28px; background:#6366f1; color:#fff;
-    border:none; border-radius:10px; font-size:13px; font-weight:600;
-    font-family:'Noto Sans KR',sans-serif; cursor:pointer;
+    padding:7px 16px; background:#6366f1; color:#fff;
+    border:none; border-radius:20px; font-size:12px; font-weight:600;
+    font-family:'Noto Sans KR',sans-serif; cursor:pointer; flex-shrink:0;
   ">상세보기</button>
 </div>
 <style>
@@ -1628,7 +1631,7 @@ function showMobileBubble(name) {
   document.getElementById('bubbleFlag').innerHTML = flagImg(name, 36);
   document.getElementById('bubbleName').textContent = getKoName(name);
   document.getElementById('bubbleNameEn').textContent = initials;
-  bubble.style.display = 'block';
+  bubble.style.display = 'flex';
 }
 
 function hideMobileBubble() {
