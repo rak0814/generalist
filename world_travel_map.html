@@ -456,6 +456,11 @@
     }
     .map-tooltip .tt-flag { font-size: 16px; margin-right: 6px; }
 
+    /* globe.gl 내장 툴팁 */
+    @media (max-width: 768px) {
+      .float-tooltip-kap { max-width: none !important; width: max-content !important; }
+    }
+
     /* 스크롤바 */
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
@@ -556,9 +561,6 @@
   gap:10px;
   white-space:nowrap;
 ">
-  <span id="bubbleFlag"></span>
-  <span id="bubbleNameEn" style="font-size:12px;color:rgba(255,255,255,0.4);font-weight:700;"></span>
-  <span id="bubbleName" style="font-size:15px;font-weight:700;color:#fff;"></span>
   <button id="bubbleDetailBtn" onclick="openBubbleDetail()" style="
     padding:7px 16px; background:#6366f1; color:#fff;
     border:none; border-radius:20px; font-size:12px; font-weight:600;
@@ -1096,7 +1098,7 @@ async function init3DGlobe() {
       const initials = d.properties.ISO_A2 && d.properties.ISO_A2 !== '-99' ? d.properties.ISO_A2 : name.slice(0,2).toUpperCase();
       const fi = flagImg(name, 16);
       const cap = getCapital(name);
-      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;">
+      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;white-space:nowrap;">
         ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}${cap ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:2px;">${cap}</span>` : ''}
       </div>`;
     })
@@ -1380,10 +1382,11 @@ async function selectCountry(name) {
       const panel = document.getElementById('infoPanel');
       const ko = getKoName(name);
       const fi = flagImgLarge(name);
+      const capLocal = getCapital(name);
       document.getElementById('infoPanelContent').innerHTML = `
         <div class="info-hero">
           <div class="info-flag">${fi}</div>
-          <div class="info-country">${ko}</div>
+          <div class="info-country">${ko}${capLocal ? ` <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${capLocal}</span>` : ''}</div>
           <div class="info-country-en">${name}</div>
         </div>
         <div class="info-section" style="text-align:center; padding:80px 24px;">
@@ -1406,7 +1409,7 @@ async function selectCountry(name) {
         document.getElementById('infoPanelContent').innerHTML = `
           <div class="info-hero">
             <div class="info-flag">${fi}</div>
-            <div class="info-country">${ko}</div>
+            <div class="info-country">${ko}${capLocal ? ` <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${capLocal}</span>` : ''}</div>
             <div class="info-country-en">${name}</div>
           </div>
           <div class="info-section" style="text-align:center; padding:60px 24px;">
@@ -1428,7 +1431,7 @@ async function selectCountry(name) {
     <!-- 헤더: 국기 + 나라이름 + 수도 + 대륙 -->
     <div class="info-hero">
       <div class="info-flag">${flagImgLarge(name)}</div>
-      <div class="info-country">${data.nameKo} <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${data.capital}</span></div>
+      <div class="info-country">${data.nameKo} <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${getCapital(name) || data.capital}</span></div>
       <div class="info-country-en">${data.nameEn}</div>
       <div class="info-continent">${data.continentIcon} ${data.continent}</div>
     </div>
@@ -1692,11 +1695,7 @@ function closePanel() {
 // ══════════════════════════════════════════════════════════════
 function showMobileBubble(name) {
   const bubble = document.getElementById('mobileBubble');
-  const initials = getIso(name) || name.slice(0,2).toUpperCase();
-  const cap = getCapital(name);
-  document.getElementById('bubbleFlag').innerHTML = flagImg(name, 24);
-  document.getElementById('bubbleName').innerHTML = getKoName(name) + (cap ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:4px;">${cap}</span>` : '');
-  document.getElementById('bubbleNameEn').textContent = initials;
+  tappedCountry = name;
   bubble.style.display = 'flex';
 }
 
