@@ -753,8 +753,139 @@ let globe = null;
 let currentView = '3d';
 let geoData = null;
 let selectedCountry = null;
-let tappedCountry = null; // 모바일: 1차 터치된 국가
+let tappedCountry = null;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+const AI_MODEL = 'gemini-2.5-flash';
+
+// ══════════════════════════════════════════════════════════════
+// AI 국가 정보 조회 + 캐싱
+// ══════════════════════════════════════════════════════════════
+const COUNTRY_PROMPT = `당신은 여행 정보 전문가입니다. 주어진 국가에 대해 아래 JSON 구조를 정확히 채워서 반환하세요.
+반드시 한국어로 작성하고, 설명 없이 순수 JSON 객체만 출력하세요. \`\`\`json 같은 마크다운 감싸기도 하지 마세요.
+
+{
+  "nameKo": "한국어 국가명",
+  "nameEn": "영어 국가명",
+  "flag": "국기 이모지",
+  "continent": "대륙명 (한국어)",
+  "continentIcon": "대륙 이모지 (🌍🌎🌏 중 하나)",
+  "capital": "수도",
+  "majorCities": [
+    { "name": "도시 한국어명", "nameEn": "영어명", "desc": "한줄 설명" }
+  ],
+  "landmarks": [
+    { "icon": "이모지", "name": "한국어명", "nameEn": "영어명" }
+  ],
+  "language": "사용 언어 (한국어 설명 포함)",
+  "phrases": [
+    { "ko": "안녕하세요", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "감사합니다", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "실례합니다", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "얼마예요?", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "화장실 어디예요?", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "도와주세요", "local": "현지어", "pron": "한국어 발음" }
+  ],
+  "seasons": ["good/ok/bad 12개월 배열 (1월~12월)"],
+  "bestTime": "여행 추천 시기",
+  "avoidTime": "피해야 할 시기와 이유",
+  "foods": [
+    { "icon": "음식 이모지", "name": "음식명" }
+  ],
+  "currency": {
+    "name": "통화명 (예: USD (미국 달러))",
+    "symbol": "통화 기호",
+    "rate": "1만원 ≈ 환산 금액",
+    "coffee": "커피 한 잔 가격 (현지+원화)",
+    "meal": "식사 한 끼 가격 (현지+원화)"
+  },
+  "timezone": "한국 대비 시차",
+  "flight": {
+    "direct": "인천 출발 직항 소요시간 (없으면 '직항 없음')",
+    "transit": "경유 시 소요시간",
+    "airlines": "주요 운항 항공사"
+  },
+  "visa": {
+    "type": "비자 유형 (무비자/도착비자/ESTA 등)",
+    "desc": "상세 안내",
+    "fee": "비용 (원화 환산 포함)"
+  },
+  "plug": {
+    "voltage": "전압/주파수",
+    "type": "플러그 타입",
+    "note": "한국 기기 사용 시 참고사항"
+  },
+  "culture": [
+    { "title": "항목명", "desc": "설명" }
+  ],
+  "transport": [
+    { "icon": "교통 이모지", "name": "교통수단명", "desc": "설명" }
+  ],
+  "itinerary": [
+    {
+      "title": "일정 제목 (예: 파리 5일)",
+      "days": ["Day 1: 일정 내용", "Day 2: ..."]
+    }
+  ],
+  "emergency": {
+    "police": "긴급 전화번호",
+    "embassy": "주재 대한민국 대사관 연락처",
+    "embassyAddr": "대사관 주소",
+    "insurance": "여행자보험 관련 주의사항"
+  }
+}
+
+주의사항:
+- majorCities는 5~6개, landmarks는 5~6개, foods는 6~8개, culture는 4~5개, transport는 4~5개
+- itinerary는 추천 일정 2개 (짧은 일정 + 긴 일정)
+- seasons 배열은 반드시 12개 문자열 ("good", "ok", "bad")
+- 모든 가격은 원화(₩) 환산 포함
+- phrases의 pron은 한국어 발음 표기`;
+
+function getCachedCountry(name) {
+  try {
+    const raw = localStorage.getItem('wtm_' + name);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return null;
+}
+
+function setCachedCountry(name, data) {
+  try {
+    localStorage.setItem('wtm_' + name, JSON.stringify(data));
+  } catch(e) {}
+}
+
+async function fetchCountryFromAI(countryName) {
+  const info = COUNTRY_NAMES[countryName];
+  const ko = info ? info.ko : countryName;
+
+  const contents = [{
+    role: 'user',
+    parts: [{ text: COUNTRY_PROMPT + '\n\n국가: ' + ko + ' (' + countryName + ')' }]
+  }];
+
+  const res = await fetch('/api/country', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      contents,
+      generationConfig: { temperature: 0.5, maxOutputTokens: 8192 }
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API 오류 ' + res.status);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  // JSON 파싱 (```json 감싸기 제거)
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(cleaned);
+}
 
 // ══════════════════════════════════════════════════════════════
 // 3D 지구본
@@ -1040,29 +1171,64 @@ function switchView(view) {
 // ══════════════════════════════════════════════════════════════
 // 국가 선택
 // ══════════════════════════════════════════════════════════════
-function selectCountry(name) {
+async function selectCountry(name) {
   selectedCountry = name;
   tappedCountry = null;
   hideMobileBubble();
-  const data = COUNTRY_DATA[name];
+  let data = COUNTRY_DATA[name];
   const info = COUNTRY_NAMES[name];
 
+  // 데이터 없으면: 캐시 확인 → 없으면 AI 호출
   if (!data) {
-    const panel = document.getElementById('infoPanel');
-    const ko = info ? info.ko : name;
-    const flag = info ? info.flag : '🏳️';
-    document.getElementById('infoPanelContent').innerHTML = `
-      <div class="info-hero">
-        <div class="info-flag">${flag}</div>
-        <div class="info-country">${ko}</div>
-        <div class="info-country-en">${name}</div>
-      </div>
-      <div class="info-section" style="text-align:center; padding:60px 24px;">
-        <p style="color:rgba(255,255,255,0.4); font-size:14px;">아직 상세 정보가 준비되지 않았습니다</p>
-        <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:8px;">곧 업데이트될 예정입니다</p>
-      </div>`;
-    panel.classList.add('open');
-    return;
+    const cached = getCachedCountry(name);
+    if (cached) {
+      data = cached;
+      COUNTRY_DATA[name] = data;
+    } else {
+      // 로딩 UI 표시
+      const panel = document.getElementById('infoPanel');
+      const ko = info ? info.ko : name;
+      const flag = info ? info.flag : '🏳️';
+      document.getElementById('infoPanelContent').innerHTML = `
+        <div class="info-hero">
+          <div class="info-flag">${flag}</div>
+          <div class="info-country">${ko}</div>
+          <div class="info-country-en">${name}</div>
+        </div>
+        <div class="info-section" style="text-align:center; padding:80px 24px;">
+          <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+          <p style="color:rgba(255,255,255,0.5); font-size:14px;">AI가 여행 정보를 수집하고 있습니다...</p>
+          <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:6px;">${ko} 정보를 불러오는 중</p>
+        </div>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+      panel.classList.add('open');
+
+      // 3D 카메라 이동
+      moveGlobeCamera(name);
+
+      try {
+        data = await fetchCountryFromAI(name);
+        COUNTRY_DATA[name] = data;
+        setCachedCountry(name, data);
+      } catch(e) {
+        console.error('AI 국가 정보 조회 실패:', e);
+        document.getElementById('infoPanelContent').innerHTML = `
+          <div class="info-hero">
+            <div class="info-flag">${flag}</div>
+            <div class="info-country">${ko}</div>
+            <div class="info-country-en">${name}</div>
+          </div>
+          <div class="info-section" style="text-align:center; padding:60px 24px;">
+            <p style="color:#f87171; font-size:14px;">정보를 불러오지 못했습니다</p>
+            <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:6px;">${e.message}</p>
+            <button onclick="selectCountry('${name}')" style="margin-top:16px;padding:10px 24px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">다시 시도</button>
+          </div>`;
+        return;
+      }
+
+      // 로딩 중 다른 국가 클릭했으면 무시
+      if (selectedCountry !== name) return;
+    }
   }
 
   const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
@@ -1333,8 +1499,10 @@ function selectCountry(name) {
   `;
 
   document.getElementById('infoPanel').classList.add('open');
+  moveGlobeCamera(name);
+}
 
-  // 3D에서 해당 국가로 카메라 이동
+function moveGlobeCamera(name) {
   if (currentView === '3d' && globe && geoData) {
     const feature = geoData.features.find(f => f.properties.NAME === name);
     if (feature) {
