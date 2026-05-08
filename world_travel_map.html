@@ -779,14 +779,14 @@ for (const [name, info] of Object.entries(COUNTRY_NAMES)) {
 
 function flagImg(name, size = 32) {
   const iso = FLAG_TO_ISO[name];
-  if (iso) return `<img src="https://flagcdn.com/w${size * 2}/${iso}.png" width="${size}" style="border-radius:4px;vertical-align:middle;" alt="">`;
+  if (iso) return `<img src="https://flagcdn.com/${iso}.svg" width="${size}" style="border-radius:3px;vertical-align:middle;" alt="">`;
   const info = COUNTRY_NAMES[name];
   return info ? info.flag : '🏳️';
 }
 
 function flagImgLarge(name) {
   const iso = FLAG_TO_ISO[name];
-  if (iso) return `<img src="https://flagcdn.com/w160/${iso}.png" style="width:64px;border-radius:6px;" alt="">`;
+  if (iso) return `<img src="https://flagcdn.com/${iso}.svg" style="width:64px;border-radius:6px;" alt="">`;
   const info = COUNTRY_NAMES[name];
   return `<span style="font-size:48px;">${info ? info.flag : '🏳️'}</span>`;
 }
