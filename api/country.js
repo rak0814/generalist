@@ -9,7 +9,7 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: { message: 'Method not allowed' } });
   }
 
-  const apiKey = process.env.GEMINI_KEY_TRAVEL;
+  const apiKey = process.env.GEMINI_KEY_COUNTRY;
   if (!apiKey) {
     return res.status(500).json({ error: { message: 'API key not configured on server' } });
   }
