@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Travel Map</title>
+  <script src="https://unpkg.com/globe.gl@2.45.3"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── 레이아웃 ── */
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── 헤더 ── */
+    .header {
+      height: 56px;
+      background: rgba(15, 20, 35, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo span { font-size: 20px; }
+
+    /* 검색 */
+    .search-wrap {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-family: 'Noto Sans KR', sans-serif;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.3); }
+    .search-input:focus {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* 검색 결과 드롭다운 */
+    .search-results {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #1e2235;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .search-results.show { display: block; }
+    .sr-item {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 13px;
+    }
+    .sr-item:hover { background: rgba(255,255,255,0.06); }
+    .sr-item:first-child { border-radius: 12px 12px 0 0; }
+    .sr-item:last-child { border-radius: 0 0 12px 12px; }
+    .sr-flag { font-size: 20px; }
+    .sr-name { font-weight: 500; }
+    .sr-name-en { font-size: 11px; color: rgba(255,255,255,0.4); margin-left: 6px; }
+
+    /* 뷰 토글 */
+    .view-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .view-btn {
+      padding: 7px 16px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .view-btn.active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+
+    /* ── 메인 영역 ── */
+    .main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 맵 컨테이너 */
+    .map-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #globe3d, #map2d {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #map2d { display: none; }
+    #map2d svg { width: 100%; height: 100%; }
+
+    /* ── 국가 정보 패널 ── */
+    .info-panel {
+      width: 400px;
+      min-width: 400px;
+      background: rgba(15, 20, 35, 0.97);
+      border-left: 1px solid rgba(255,255,255,0.06);
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(20px);
+      z-index: 50;
+    }
+    .info-panel.open { transform: translateX(0); }
+
+    .info-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .info-close:hover { background: rgba(255,255,255,0.12); }
+
+    /* 패널 헤더 */
+    .info-hero {
+      position: relative;
+      padding: 32px 24px 24px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(59,130,246,0.1));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .info-flag { font-size: 48px; margin-bottom: 12px; }
+    .info-country { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+    .info-country-en { font-size: 14px; color: rgba(255,255,255,0.4); font-weight: 400; margin-top: 2px; }
+    .info-continent {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* 인사말 */
+    .hello-card {
+      margin: 20px 24px 0;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 14px;
+    }
+    .hello-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+    .hello-text { font-size: 22px; font-weight: 700; color: #a5b4fc; }
+    .hello-pron { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+    /* 정보 섹션 */
+    .info-section {
+      padding: 20px 24px;
+    }
+    .info-section + .info-section {
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .info-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-item {
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .info-item-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .info-item-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .info-item.full { grid-column: 1 / -1; }
+
+    /* 여행 시기 */
+    .season-bar {
+      display: flex;
+      gap: 2px;
+      margin-top: 8px;
+    }
+    .season-month {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .season-month.good { background: rgba(34,197,94,0.2); color: #4ade80; }
+    .season-month.ok { background: rgba(250,204,21,0.15); color: #facc15; }
+    .season-month.bad { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* 랜드마크 */
+    .landmark-list { display: flex; flex-direction: column; gap: 8px; }
+    .landmark-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .landmark-icon { font-size: 22px; flex-shrink: 0; }
+    .landmark-name { font-size: 13px; font-weight: 500; }
+    .landmark-name-en { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+    /* 음식 */
+    .food-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .food-tag {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 대표도시 */
+    .city-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .city-num {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(99,102,241,0.15); color: #a5b4fc;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .city-name { font-size: 13px; font-weight: 600; }
+    .city-name-en { font-size: 10px; color: rgba(255,255,255,0.35); }
+    .city-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+    /* 기본회화 */
+    .phrase-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .phrase-ko { font-size: 11px; color: rgba(255,255,255,0.4); flex-shrink: 0; margin-right: 12px; }
+    .phrase-right { text-align: right; }
+    .phrase-local { font-size: 13px; font-weight: 600; color: #a5b4fc; }
+    .phrase-pron { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* 문화/매너 */
+    .culture-item {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .culture-title { font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+    .culture-desc { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    /* 교통 */
+    .transport-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .transport-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .transport-name { font-size: 12px; font-weight: 600; }
+    .transport-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+    /* 추천일정 */
+    .itinerary-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .itinerary-title {
+      padding: 10px 14px;
+      background: rgba(99,102,241,0.08);
+      font-size: 13px; font-weight: 700; color: #a5b4fc;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    }
+    .itinerary-body { padding: 10px 14px; }
+    .itinerary-day {
+      padding: 6px 0;
+      font-size: 11px; color: rgba(255,255,255,0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .itinerary-day:last-child { border-bottom: none; }
+    .itinerary-day strong { color: #a5b4fc; font-weight: 600; }
+
+    /* 긴급연락처 */
+    .emergency-card {
+      padding: 14px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.15);
+      border-radius: 10px;
+    }
+    .emergency-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; font-size: 12px;
+    }
+    .emergency-row + .emergency-row { border-top: 1px solid rgba(255,255,255,0.04); }
+    .emergency-label { color: rgba(255,255,255,0.4); }
+    .emergency-value { font-weight: 600; color: #fff; text-align: right; }
+    .emergency-warn {
+      margin-top: 10px; padding: 8px 12px;
+      background: rgba(239,68,68,0.1); border-radius: 8px;
+      font-size: 11px; color: #f87171; line-height: 1.5;
+    }
+
+    /* VGT 버튼 */
+    .vgt-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .vgt-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    /* 툴팁 */
+    .map-tooltip {
+      position: fixed;
+      padding: 8px 14px;
+      background: rgba(15,20,35,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      pointer-events: none;
+      z-index: 300;
+      display: none;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .map-tooltip .tt-flag { font-size: 16px; margin-right: 6px; }
+
+    /* 스크롤바 */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ── 모바일 ── */
+    @media (max-width: 768px) {
+      .header { padding: 0 12px; gap: 8px; height: 50px; }
+      .logo { font-size: 13px; }
+      .logo span { font-size: 16px; }
+      .search-input { font-size: 14px; padding: 9px 12px 9px 36px; }
+      .search-icon { left: 10px; }
+      .view-btn { padding: 6px 10px; font-size: 11px; }
+
+      .info-panel {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; min-width: 100%;
+        transform: translateY(100%);
+        border-left: none;
+        z-index: 200;
+      }
+      .info-panel.open { transform: translateY(0); }
+
+      .info-hero { padding: 24px 16px 20px; }
+      .info-flag { font-size: 40px; }
+      .info-country { font-size: 24px; }
+      .info-section { padding: 16px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .hello-card { margin: 16px 16px 0; }
+
+      .search-results { max-height: 260px; }
+      .info-close { width: 40px; height: 40px; font-size: 22px; top: 12px; right: 12px; }
+      .info-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="logo"><span>🌍</span> World Travel Map</div>
+
+    <div class="search-wrap">
+      <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="국가명을 검색하세요... (예: 미국, Japan, France)" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn3d" onclick="switchView('3d')">🌐 3D</button>
+      <button class="view-btn" id="btn2d" onclick="switchView('2d')">🗺 2D</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+    <div class="map-container">
+      <div id="globe3d"></div>
+      <div id="map2d"></div>
+    </div>
+
+    <!-- 국가 정보 패널 -->
+    <div class="info-panel" id="infoPanel">
+      <button class="info-close" onclick="closePanel()">&times;</button>
+      <div id="infoPanelContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 툴팁 (PC hover용) -->
+<div class="map-tooltip" id="tooltip"></div>
+
+<!-- 모바일 말풍선 -->
+<div id="mobileBubble" style="
+  display:none;
+  position:fixed;
+  bottom:100px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:14px 24px;
+  background:rgba(15,20,35,0.97);
+  border:1px solid rgba(99,102,241,0.4);
+  border-radius:16px;
+  text-align:center;
+  z-index:150;
+  backdrop-filter:blur(20px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  min-width:200px;
+  animation: bubbleIn 0.3s ease;
+">
+  <div id="bubbleFlag" style="font-size:36px;margin-bottom:6px;"></div>
+  <div id="bubbleName" style="font-size:18px;font-weight:700;color:#fff;"></div>
+  <div id="bubbleNameEn" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
+  <div style="margin-top:10px;font-size:11px;color:#a5b4fc;font-weight:500;">한번 더 터치하여 상세보기</div>
+</div>
+<style>
+  @keyframes bubbleIn {
+    from { opacity:0; transform:translateX(-50%) translateY(10px); }
+    to { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 국가 데이터 (미국 샘플)
+// ══════════════════════════════════════════════════════════════
+const COUNTRY_DATA = {
+  'United States of America': {
+    nameKo: '미국',
+    nameEn: 'United States of America',
+    flag: '🇺🇸',
+    continent: '북아메리카',
+    continentIcon: '🌎',
+    continentShape: 'M12 2C8.5 2 5.5 4 4 7l-2 5 1 4 3 2 2-1 3 3 4-1 3 2 4-3 2 1 2-3-1-4-2-4c-1-3-4-6-8-6z',
+    capital: '워싱턴 D.C.',
+    majorCities: [
+      { name: '뉴욕', nameEn: 'New York', desc: '미국 최대 도시, 금융·문화 중심' },
+      { name: '로스앤젤레스', nameEn: 'Los Angeles', desc: '할리우드, 서부 최대 도시' },
+      { name: '시카고', nameEn: 'Chicago', desc: '건축·재즈의 도시' },
+      { name: '샌프란시스코', nameEn: 'San Francisco', desc: '금문교, IT 허브' },
+      { name: '라스베이거스', nameEn: 'Las Vegas', desc: '엔터테인먼트의 수도' },
+      { name: '호놀룰루', nameEn: 'Honolulu', desc: '하와이 휴양 도시' },
+    ],
+    landmarks: [
+      { icon: '🗽', name: '자유의 여신상', nameEn: 'Statue of Liberty' },
+      { icon: '🏜️', name: '그랜드 캐니언', nameEn: 'Grand Canyon' },
+      { icon: '🌉', name: '금문교', nameEn: 'Golden Gate Bridge' },
+      { icon: '🏙️', name: '타임스 스퀘어', nameEn: 'Times Square' },
+      { icon: '🗻', name: '요세미티 국립공원', nameEn: 'Yosemite National Park' },
+      { icon: '🎢', name: '디즈니월드', nameEn: 'Walt Disney World' },
+    ],
+    language: 'English (영어)',
+    phrases: [
+      { ko: '안녕하세요', local: 'Hello', pron: '헬로' },
+      { ko: '감사합니다', local: 'Thank you', pron: '땡큐' },
+      { ko: '실례합니다', local: 'Excuse me', pron: '익스큐즈 미' },
+      { ko: '얼마예요?', local: 'How much?', pron: '하우 머치?' },
+      { ko: '화장실 어디예요?', local: 'Where is the restroom?', pron: '웨어 이즈 더 레스트룸?' },
+      { ko: '도와주세요', local: 'Help me, please', pron: '헬프 미 플리즈' },
+    ],
+    seasons: [
+      'ok','ok','good','good','good','ok',
+      'bad','bad','good','good','ok','ok'
+    ],
+    bestTime: '4~5월, 9~10월 (봄/가을)',
+    avoidTime: '7~8월 (폭염·인파 집중, 허리케인 시즌)',
+    foods: [
+      { icon: '🍔', name: '햄버거' },
+      { icon: '🥩', name: '스테이크' },
+      { icon: '🌮', name: '타코' },
+      { icon: '🍕', name: '뉴욕 피자' },
+      { icon: '🥞', name: '팬케이크' },
+      { icon: '🦞', name: '랍스터' },
+      { icon: '🌭', name: '핫도그' },
+      { icon: '🍗', name: '프라이드치킨' },
+    ],
+    currency: {
+      name: 'USD (미국 달러)',
+      symbol: '$',
+      rate: '1만원 ≈ $7.2',
+      coffee: '약 $5~7 (₩7,000~10,000)',
+      meal: '약 $15~30 (₩21,000~42,000)',
+    },
+    timezone: '-14시간 (동부 기준)',
+    flight: {
+      direct: '인천 → 약 13~14시간',
+      transit: '경유 시 18~22시간',
+      airlines: '대한항공, 아시아나, 유나이티드, 델타 등',
+    },
+    visa: {
+      type: 'ESTA (전자여행허가)',
+      desc: '최대 90일 체류, 출발 72시간 전 신청 권장',
+      fee: '$21 (약 ₩29,000)',
+    },
+    plug: {
+      voltage: '120V / 60Hz',
+      type: 'A·B타입 (납작 2핀)',
+      note: '한국 기기 사용 시 변압기 필요',
+    },
+    culture: [
+      { title: '팁 문화', desc: '레스토랑 15~20%, 택시·호텔 $1~5 필수' },
+      { title: '줄 서기', desc: '어디서든 줄을 철저히 지킴, 새치기 금물' },
+      { title: '개인 공간', desc: '대화 시 팔 한 개 정도 거리 유지' },
+      { title: '음주', desc: '21세 미만 음주 불법, ID 검사 엄격' },
+      { title: '흡연', desc: '대부분 실내 금연, 지역별 규제 다름' },
+    ],
+    transport: [
+      { icon: '🚇', name: '지하철', desc: '뉴욕(MTA), LA(Metro) 등 대도시 운행' },
+      { icon: '🚗', name: '렌터카', desc: '대도시 외 지역은 렌터카 필수, 국제면허증 지참' },
+      { icon: '🚌', name: '그레이하운드', desc: '도시 간 장거리 버스, 저렴한 이동 수단' },
+      { icon: '🚄', name: '암트랙', desc: '미국 횡단 열차, 경치 좋은 노선 다수' },
+      { icon: '🚕', name: 'Uber/Lyft', desc: '택시 대신 앱 호출이 일반적' },
+    ],
+    itinerary: [
+      {
+        title: '뉴욕 5일',
+        days: [
+          'Day 1: 맨해튼 도착 → 타임스퀘어 → 브로드웨이 뮤지컬',
+          'Day 2: 자유의 여신상 → 엘리스 아일랜드 → 월스트리트',
+          'Day 3: 센트럴파크 → 메트로폴리탄 미술관 → 5번가 쇼핑',
+          'Day 4: 브루클린 브릿지 → 덤보 → 첼시 마켓',
+          'Day 5: 엠파이어 스테이트 빌딩 → 출발',
+        ]
+      },
+      {
+        title: '서부 7일',
+        days: [
+          'Day 1: LA 도착 → 산타모니카 해변',
+          'Day 2: 할리우드 → 그리피스 천문대',
+          'Day 3: LA → 라스베이거스 이동',
+          'Day 4: 그랜드 캐니언 당일투어',
+          'Day 5: 라스베이거스 자유시간',
+          'Day 6: 라스베이거스 → 샌프란시스코 이동',
+          'Day 7: 금문교 → 피셔맨스 워프 → 출발',
+        ]
+      }
+    ],
+    emergency: {
+      police: '911 (경찰·소방·응급 통합)',
+      embassy: '주미 대한민국 대사관: +1-202-939-5600',
+      embassyAddr: '2450 Massachusetts Ave NW, Washington, D.C.',
+      insurance: '의료비 매우 비쌈 — 여행자보험 필수 가입',
+    },
+  }
+};
+
+// 국가 한글 매핑 (검색용)
+const COUNTRY_NAMES = {
+  'United States of America': { ko: '미국', flag: '🇺🇸' },
+  'South Korea': { ko: '대한민국', flag: '🇰🇷' },
+  'Japan': { ko: '일본', flag: '🇯🇵' },
+  'China': { ko: '중국', flag: '🇨🇳' },
+  'France': { ko: '프랑스', flag: '🇫🇷' },
+  'Germany': { ko: '독일', flag: '🇩🇪' },
+  'United Kingdom': { ko: '영국', flag: '🇬🇧' },
+  'Italy': { ko: '이탈리아', flag: '🇮🇹' },
+  'Spain': { ko: '스페인', flag: '🇪🇸' },
+  'Turkey': { ko: '튀르키예', flag: '🇹🇷' },
+  'Thailand': { ko: '태국', flag: '🇹🇭' },
+  'Vietnam': { ko: '베트남', flag: '🇻🇳' },
+  'Australia': { ko: '호주', flag: '🇦🇺' },
+  'Canada': { ko: '캐나다', flag: '🇨🇦' },
+  'Brazil': { ko: '브라질', flag: '🇧🇷' },
+  'India': { ko: '인도', flag: '🇮🇳' },
+  'Russia': { ko: '러시아', flag: '🇷🇺' },
+  'Mexico': { ko: '멕시코', flag: '🇲🇽' },
+  'Egypt': { ko: '이집트', flag: '🇪🇬' },
+  'Switzerland': { ko: '스위스', flag: '🇨🇭' },
+  'Philippines': { ko: '필리핀', flag: '🇵🇭' },
+  'Indonesia': { ko: '인도네시아', flag: '🇮🇩' },
+  'Singapore': { ko: '싱가포르', flag: '🇸🇬' },
+  'Malaysia': { ko: '말레이시아', flag: '🇲🇾' },
+  'New Zealand': { ko: '뉴질랜드', flag: '🇳🇿' },
+  'Greece': { ko: '그리스', flag: '🇬🇷' },
+  'Portugal': { ko: '포르투갈', flag: '🇵🇹' },
+  'Netherlands': { ko: '네덜란드', flag: '🇳🇱' },
+  'Czech Republic': { ko: '체코', flag: '🇨🇿' },
+  'Czechia': { ko: '체코', flag: '🇨🇿' },
+  'Croatia': { ko: '크로아티아', flag: '🇭🇷' },
+  'Morocco': { ko: '모로코', flag: '🇲🇦' },
+  'South Africa': { ko: '남아프리카공화국', flag: '🇿🇦' },
+  'Argentina': { ko: '아르헨티나', flag: '🇦🇷' },
+  'Peru': { ko: '페루', flag: '🇵🇪' },
+  'Colombia': { ko: '콜롬비아', flag: '🇨🇴' },
+  'Norway': { ko: '노르웨이', flag: '🇳🇴' },
+  'Sweden': { ko: '스웨덴', flag: '🇸🇪' },
+  'Finland': { ko: '핀란드', flag: '🇫🇮' },
+  'Denmark': { ko: '덴마크', flag: '🇩🇰' },
+  'Iceland': { ko: '아이슬란드', flag: '🇮🇸' },
+  'Austria': { ko: '오스트리아', flag: '🇦🇹' },
+  'Poland': { ko: '폴란드', flag: '🇵🇱' },
+  'Hungary': { ko: '헝가리', flag: '🇭🇺' },
+  'Ireland': { ko: '아일랜드', flag: '🇮🇪' },
+  'Taiwan': { ko: '대만', flag: '🇹🇼' },
+  'Mongolia': { ko: '몽골', flag: '🇲🇳' },
+  'Cambodia': { ko: '캄보디아', flag: '🇰🇭' },
+  'Laos': { ko: '라오스', flag: '🇱🇦' },
+  'Myanmar': { ko: '미얀마', flag: '🇲🇲' },
+  'Nepal': { ko: '네팔', flag: '🇳🇵' },
+  'Sri Lanka': { ko: '스리랑카', flag: '🇱🇰' },
+  'Kenya': { ko: '케냐', flag: '🇰🇪' },
+  'Tanzania': { ko: '탄자니아', flag: '🇹🇿' },
+  'Israel': { ko: '이스라엘', flag: '🇮🇱' },
+  'Jordan': { ko: '요르단', flag: '🇯🇴' },
+  'Saudi Arabia': { ko: '사우디아라비아', flag: '🇸🇦' },
+  'Cuba': { ko: '쿠바', flag: '🇨🇺' },
+  'Chile': { ko: '칠레', flag: '🇨🇱' },
+  'Bolivia': { ko: '볼리비아', flag: '🇧🇴' },
+};
+
+// ══════════════════════════════════════════════════════════════
+// 글로벌 변수
+// ══════════════════════════════════════════════════════════════
+let globe = null;
+let currentView = '3d';
+let geoData = null;
+let selectedCountry = null;
+let tappedCountry = null; // 모바일: 1차 터치된 국가
+const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// ══════════════════════════════════════════════════════════════
+// 3D 지구본
+// ══════════════════════════════════════════════════════════════
+async function init3DGlobe() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson');
+    geoData = await res.json();
+  } catch(e) {
+    console.error('GeoJSON 로드 실패:', e);
+    document.getElementById('globe3d').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">3D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
+    return;
+  }
+
+  const container = document.getElementById('globe3d');
+  const w = container.clientWidth || window.innerWidth;
+  const h = container.clientHeight || window.innerHeight - 56;
+
+  globe = Globe()
+    .width(w)
+    .height(h)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .polygonsData(geoData.features)
+    .polygonCapColor(d => {
+      if (selectedCountry && d.properties.NAME === selectedCountry) return 'rgba(99, 102, 241, 0.6)';
+      return 'rgba(30, 60, 120, 0.4)';
+    })
+    .polygonSideColor(() => 'rgba(99, 102, 241, 0.08)')
+    .polygonStrokeColor(() => 'rgba(150, 180, 255, 0.3)')
+    .polygonAltitude(d => {
+      if (selectedCountry && d.properties.NAME === selectedCountry) return 0.025;
+      return 0.008;
+    })
+    .polygonLabel(d => {
+      const name = d.properties.NAME;
+      const info = COUNTRY_NAMES[name];
+      const flag = info ? info.flag : '';
+      const ko = info ? info.ko : name;
+      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;">
+        <span style="font-size:16px;margin-right:6px;">${flag}</span>${ko}
+      </div>`;
+    })
+    .onPolygonHover(d => {
+      container.style.cursor = d ? 'pointer' : 'default';
+      globe
+        .polygonCapColor(f => {
+          if (selectedCountry && f.properties.NAME === selectedCountry) return 'rgba(99, 102, 241, 0.6)';
+          if (d && f === d) return 'rgba(99, 102, 241, 0.35)';
+          return 'rgba(30, 60, 120, 0.4)';
+        })
+        .polygonAltitude(f => {
+          if (selectedCountry && f.properties.NAME === selectedCountry) return 0.025;
+          if (d && f === d) return 0.02;
+          return 0.008;
+        })
+        .polygonStrokeColor(f => {
+          if (d && f === d) return 'rgba(165, 180, 252, 0.8)';
+          return 'rgba(150, 180, 255, 0.3)';
+        });
+    })
+    .onPolygonClick(d => {
+      if (!d) {
+        // 빈 곳 터치 → 말풍선 닫기
+        tappedCountry = null;
+        hideMobileBubble();
+        return;
+      }
+      const name = d.properties.NAME;
+      if (isMobile) {
+        if (tappedCountry === name) {
+          // 2차 터치 → 패널 오픈
+          tappedCountry = null;
+          hideMobileBubble();
+          selectCountry(name);
+        } else {
+          // 1차 터치 → 말풍선 표시
+          tappedCountry = name;
+          showMobileBubble(name);
+          // 하이라이트
+          globe
+            .polygonCapColor(f => f.properties.NAME === name ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.4)')
+            .polygonAltitude(f => f.properties.NAME === name ? 0.02 : 0.008)
+            .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.8)' : 'rgba(150, 180, 255, 0.3)');
+        }
+      } else {
+        selectCountry(name);
+      }
+    })
+    .atmosphereColor('#6366f1')
+    .atmosphereAltitude(0.2)
+    (container);
+
+  globe.pointOfView({ lat: 35, lng: 128, altitude: 2.2 }, 0);
+
+  // 리사이즈 대응
+  window.addEventListener('resize', () => {
+    if (globe && currentView === '3d') {
+      globe.width(container.clientWidth);
+      globe.height(container.clientHeight);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 2D 지도
+// ══════════════════════════════════════════════════════════════
+let map2dInited = false;
+async function init2DMap() {
+  if (map2dInited) return;
+  map2dInited = true;
+
+  const container = document.getElementById('map2d');
+  const width = 960;
+  const height = 500;
+
+  const svg = d3.select('#map2d')
+    .append('svg')
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet')
+    .style('width', '100%')
+    .style('height', '100%')
+    .style('background', '#0a0e1a');
+
+  const projection = d3.geoNaturalEarth1()
+    .scale(160)
+    .translate([width / 2, height / 2]);
+
+  const path = d3.geoPath().projection(projection);
+
+  let world, countryNamesList;
+  try {
+    const [worldRes, countryNamesRes] = await Promise.all([
+      fetch('https://unpkg.com/world-atlas@2/countries-110m.json'),
+      fetch('https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/slim-3/slim-3.json')
+    ]);
+    world = await worldRes.json();
+    countryNamesList = await countryNamesRes.json();
+  } catch(e) {
+    console.error('2D 데이터 로드 실패:', e);
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">2D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
+    return;
+  }
+  const countries = topojson.feature(world, world.objects.countries);
+  const idToName = {};
+  countryNamesList.forEach(c => {
+    idToName[c['country-code']] = c.name;
+  });
+
+  // 격자선
+  const graticule = d3.geoGraticule();
+  svg.append('path')
+    .datum(graticule())
+    .attr('d', path)
+    .attr('fill', 'none')
+    .attr('stroke', 'rgba(255,255,255,0.04)')
+    .attr('stroke-width', 0.5);
+
+  // 국가 그리기
+  const g = svg.append('g');
+
+  g.selectAll('path')
+    .data(countries.features)
+    .enter()
+    .append('path')
+    .attr('d', path)
+    .attr('fill', 'rgba(30, 60, 120, 0.5)')
+    .attr('stroke', 'rgba(150, 180, 255, 0.2)')
+    .attr('stroke-width', 0.5)
+    .attr('data-id', d => d.id)
+    .style('cursor', 'pointer')
+    .style('transition', 'fill 0.2s')
+    .on('mouseover', function(event, d) {
+      const name = idToName[String(d.id).padStart(3, '0')] || 'Unknown';
+      d3.select(this)
+        .attr('fill', 'rgba(99, 102, 241, 0.5)')
+        .attr('stroke', 'rgba(165, 180, 252, 0.9)')
+        .attr('stroke-width', 1.5)
+        .style('filter', 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.6))');
+
+      const info = findCountryByEnName(name);
+      const tooltip = document.getElementById('tooltip');
+      tooltip.innerHTML = `<span class="tt-flag">${info?.flag || '🏳️'}</span>${info?.ko || name}`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (event.clientX + 16) + 'px';
+      tooltip.style.top = (event.clientY - 10) + 'px';
+    })
+    .on('mousemove', function(event) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.left = (event.clientX + 16) + 'px';
+      tooltip.style.top = (event.clientY - 10) + 'px';
+    })
+    .on('mouseout', function() {
+      d3.select(this)
+        .attr('fill', d => (selectedCountry && getCountryEnName(d) === selectedCountry) ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)')
+        .attr('stroke', 'rgba(150, 180, 255, 0.2)')
+        .attr('stroke-width', 0.5)
+        .style('filter', 'none');
+      document.getElementById('tooltip').style.display = 'none';
+    })
+    .on('click', function(event, d) {
+      const name = idToName[String(d.id).padStart(3, '0')] || '';
+      const matched = findClosestCountryName(name);
+      if (!matched) return;
+
+      if (isMobile) {
+        if (tappedCountry === matched) {
+          tappedCountry = null;
+          hideMobileBubble();
+          selectCountry(matched);
+        } else {
+          tappedCountry = matched;
+          showMobileBubble(matched);
+          // 하이라이트
+          d3.select('#map2d').selectAll('path')
+            .attr('fill', f => {
+              const fn = idToName[String(f.id).padStart(3, '0')] || '';
+              const fm = findClosestCountryName(fn);
+              return fm === matched ? 'rgba(99,102,241,0.5)' : 'rgba(30, 60, 120, 0.5)';
+            })
+            .attr('stroke-width', f => {
+              const fn = idToName[String(f.id).padStart(3, '0')] || '';
+              const fm = findClosestCountryName(fn);
+              return fm === matched ? 1.5 : 0.5;
+            });
+        }
+      } else {
+        selectCountry(matched);
+      }
+    });
+
+  // 줌
+  const zoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    });
+  svg.call(zoom);
+}
+
+function findCountryByEnName(name) {
+  for (const [en, info] of Object.entries(COUNTRY_NAMES)) {
+    if (en === name || en.includes(name) || name.includes(en)) return info;
+  }
+  return null;
+}
+
+function findClosestCountryName(name) {
+  for (const en of Object.keys(COUNTRY_NAMES)) {
+    if (en === name || en.includes(name) || name.includes(en)) return en;
+  }
+  // 데이터 있는 국가만
+  for (const en of Object.keys(COUNTRY_DATA)) {
+    if (en === name || en.includes(name) || name.includes(en)) return en;
+  }
+  return name;
+}
+
+function getCountryEnName(d) {
+  return '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// 뷰 전환
+// ══════════════════════════════════════════════════════════════
+function switchView(view) {
+  currentView = view;
+  document.getElementById('globe3d').style.display = view === '3d' ? 'block' : 'none';
+  document.getElementById('map2d').style.display = view === '2d' ? 'block' : 'none';
+  document.getElementById('btn3d').classList.toggle('active', view === '3d');
+  document.getElementById('btn2d').classList.toggle('active', view === '2d');
+
+  if (view === '3d' && globe) {
+    const c = document.getElementById('globe3d');
+    globe.width(c.clientWidth);
+    globe.height(c.clientHeight);
+  }
+  if (view === '2d') {
+    init2DMap();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 국가 선택
+// ══════════════════════════════════════════════════════════════
+function selectCountry(name) {
+  selectedCountry = name;
+  tappedCountry = null;
+  hideMobileBubble();
+  const data = COUNTRY_DATA[name];
+  const info = COUNTRY_NAMES[name];
+
+  if (!data) {
+    const panel = document.getElementById('infoPanel');
+    const ko = info ? info.ko : name;
+    const flag = info ? info.flag : '🏳️';
+    document.getElementById('infoPanelContent').innerHTML = `
+      <div class="info-hero">
+        <div class="info-flag">${flag}</div>
+        <div class="info-country">${ko}</div>
+        <div class="info-country-en">${name}</div>
+      </div>
+      <div class="info-section" style="text-align:center; padding:60px 24px;">
+        <p style="color:rgba(255,255,255,0.4); font-size:14px;">아직 상세 정보가 준비되지 않았습니다</p>
+        <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:8px;">곧 업데이트될 예정입니다</p>
+      </div>`;
+    panel.classList.add('open');
+    return;
+  }
+
+  const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+
+  document.getElementById('infoPanelContent').innerHTML = `
+    <!-- 헤더: 국기 + 나라이름 + 대륙 -->
+    <div class="info-hero">
+      <div class="info-flag">${data.flag}</div>
+      <div class="info-country">${data.nameKo}</div>
+      <div class="info-country-en">${data.nameEn}</div>
+      <div class="info-continent">${data.continentIcon} ${data.continent}</div>
+    </div>
+
+    <!-- 1. 기본 정보 -->
+    <div class="info-section">
+      <div class="info-section-title">기본 정보</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">🏛 수도</div>
+          <div class="info-item-value">${data.capital}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🗣 사용 언어</div>
+          <div class="info-item-value">${data.language}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🕐 시차</div>
+          <div class="info-item-value">${data.timezone}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">💰 통화</div>
+          <div class="info-item-value">${data.currency.name}<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">${data.currency.rate}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 대표도시 -->
+    <div class="info-section">
+      <div class="info-section-title">대표 도시</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.majorCities.map((c, i) => `
+          <div class="city-item">
+            <div class="city-num">${i + 1}</div>
+            <div>
+              <div class="city-name">${c.name} <span class="city-name-en">${c.nameEn}</span></div>
+              <div class="city-desc">${c.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 3. 랜드마크 -->
+    <div class="info-section">
+      <div class="info-section-title">랜드마크</div>
+      <div class="landmark-list">
+        ${data.landmarks.map(l => `
+          <div class="landmark-item">
+            <span class="landmark-icon">${l.icon}</span>
+            <div>
+              <div class="landmark-name">${l.name}</div>
+              <div class="landmark-name-en">${l.nameEn}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 4. 기본회화 -->
+    <div class="info-section">
+      <div class="info-section-title">기본 회화</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.phrases.map(p => `
+          <div class="phrase-item">
+            <span class="phrase-ko">${p.ko}</span>
+            <div class="phrase-right">
+              <div class="phrase-local">${p.local}</div>
+              <div class="phrase-pron">${p.pron}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 5. 여행 시기 -->
+    <div class="info-section">
+      <div class="info-section-title">여행 시기</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">✅ 여행하기 좋은 시기</div>
+          <div class="info-item-value">${data.bestTime}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">⚠️ 피해야 할 시기</div>
+          <div class="info-item-value">${data.avoidTime}</div>
+        </div>
+      </div>
+      <div class="season-bar">
+        ${months.map((m, i) => `<div class="season-month ${data.seasons[i]}">${m}</div>`).join('')}
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:rgba(255,255,255,0.35);">
+        <span><span style="color:#4ade80;">●</span> 추천</span>
+        <span><span style="color:#facc15;">●</span> 보통</span>
+        <span><span style="color:#f87171;">●</span> 비추천</span>
+      </div>
+    </div>
+
+    <!-- 6. 대표 음식 -->
+    <div class="info-section">
+      <div class="info-section-title">대표 음식</div>
+      <div class="food-tags">
+        ${data.foods.map(f => `<span class="food-tag">${f.icon} ${f.name}</span>`).join('')}
+      </div>
+    </div>
+
+    <!-- 7. 현지 물가 (화폐/환율) -->
+    <div class="info-section">
+      <div class="info-section-title">현지 물가</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">💱 환율</div>
+          <div class="info-item-value">${data.currency.name} — ${data.currency.rate}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">☕ 커피 한 잔</div>
+          <div class="info-item-value">${data.currency.coffee}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🍽 식사 한 끼</div>
+          <div class="info-item-value">${data.currency.meal}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. 비행시간 / 직항·경유 -->
+    <div class="info-section">
+      <div class="info-section-title">항공편</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">✈️ 직항</div>
+          <div class="info-item-value">${data.flight.direct}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🔄 경유</div>
+          <div class="info-item-value">${data.flight.transit}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">🛫 주요 항공사</div>
+          <div class="info-item-value">${data.flight.airlines}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. 비자 -->
+    <div class="info-section">
+      <div class="info-section-title">비자</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">📋 유형</div>
+          <div class="info-item-value">${data.visa.type}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">📝 안내</div>
+          <div class="info-item-value" style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.7);line-height:1.5;">${data.visa.desc}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">💵 비용</div>
+          <div class="info-item-value">${data.visa.fee}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. 콘센트/전압 -->
+    <div class="info-section">
+      <div class="info-section-title">콘센트 / 전압</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">⚡ 전압</div>
+          <div class="info-item-value">${data.plug.voltage}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🔌 플러그</div>
+          <div class="info-item-value">${data.plug.type}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">💡 참고</div>
+          <div class="info-item-value" style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.7);">${data.plug.note}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 11. 문화/매너 -->
+    <div class="info-section">
+      <div class="info-section-title">문화 / 매너</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.culture.map(c => `
+          <div class="culture-item">
+            <div class="culture-title">${c.title}</div>
+            <div class="culture-desc">${c.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 12. 교통정보 -->
+    <div class="info-section">
+      <div class="info-section-title">교통 정보</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.transport.map(t => `
+          <div class="transport-item">
+            <span class="transport-icon">${t.icon}</span>
+            <div>
+              <div class="transport-name">${t.name}</div>
+              <div class="transport-desc">${t.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 13. 여행 추천 일정 -->
+    <div class="info-section">
+      <div class="info-section-title">추천 일정</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${data.itinerary.map((it, idx) => `
+          <div class="itinerary-card">
+            <div class="itinerary-title" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+              ${it.title}
+              <span style="font-size:11px;color:rgba(255,255,255,0.3);">펼치기 ▾</span>
+            </div>
+            <div class="itinerary-body" ${idx > 0 ? 'style="display:none;"' : ''}>
+              ${it.days.map(d => {
+                const parts = d.split(':');
+                return `<div class="itinerary-day"><strong>${parts[0]}:</strong>${parts.slice(1).join(':')}</div>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 14. 긴급 연락처 -->
+    <div class="info-section">
+      <div class="info-section-title">긴급 연락처</div>
+      <div class="emergency-card">
+        <div class="emergency-row">
+          <span class="emergency-label">🚨 긴급전화</span>
+          <span class="emergency-value">${data.emergency.police}</span>
+        </div>
+        <div class="emergency-row">
+          <span class="emergency-label">🏛 대사관</span>
+          <span class="emergency-value">${data.emergency.embassy}</span>
+        </div>
+        <div class="emergency-row">
+          <span class="emergency-label">📍 대사관 주소</span>
+          <span class="emergency-value" style="font-size:10px;">${data.emergency.embassyAddr}</span>
+        </div>
+        <div class="emergency-warn">⚠️ ${data.emergency.insurance}</div>
+      </div>
+    </div>
+
+    <!-- VGT 연결 -->
+    <div class="info-section">
+      <button class="vgt-btn" onclick="window.open('https://www.verygoodtour.com','_blank')">
+        ✈️ VGT ${data.nameKo} 상품 보기
+      </button>
+    </div>
+  `;
+
+  document.getElementById('infoPanel').classList.add('open');
+
+  // 3D에서 해당 국가로 카메라 이동
+  if (currentView === '3d' && globe && geoData) {
+    const feature = geoData.features.find(f => f.properties.NAME === name);
+    if (feature) {
+      const coords = d3.geoCentroid(feature);
+      globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: 1.8 }, 1000);
+    }
+    globe.polygonCapColor(f => {
+      if (f.properties.NAME === name) return 'rgba(99, 102, 241, 0.6)';
+      return 'rgba(30, 60, 120, 0.4)';
+    });
+    globe.polygonAltitude(f => {
+      if (f.properties.NAME === name) return 0.025;
+      return 0.008;
+    });
+  }
+}
+
+function closePanel() {
+  document.getElementById('infoPanel').classList.remove('open');
+  selectedCountry = null;
+  tappedCountry = null;
+  if (globe) {
+    globe.polygonCapColor(() => 'rgba(30, 60, 120, 0.4)');
+    globe.polygonAltitude(() => 0.008);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 모바일 말풍선
+// ══════════════════════════════════════════════════════════════
+function showMobileBubble(name) {
+  const info = COUNTRY_NAMES[name];
+  const bubble = document.getElementById('mobileBubble');
+  document.getElementById('bubbleFlag').textContent = info ? info.flag : '🏳️';
+  document.getElementById('bubbleName').textContent = info ? info.ko : name;
+  document.getElementById('bubbleNameEn').textContent = name;
+  bubble.style.display = 'block';
+}
+
+function hideMobileBubble() {
+  document.getElementById('mobileBubble').style.display = 'none';
+}
+
+// ══════════════════════════════════════════════════════════════
+// 검색
+// ══════════════════════════════════════════════════════════════
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) {
+    searchResults.classList.remove('show');
+    return;
+  }
+
+  const matches = Object.entries(COUNTRY_NAMES)
+    .filter(([en, info]) =>
+      info.ko.includes(q) || en.toLowerCase().includes(q)
+    )
+    .slice(0, 8);
+
+  if (matches.length === 0) {
+    searchResults.innerHTML = '<div class="sr-item" style="color:rgba(255,255,255,0.35);cursor:default;">검색 결과가 없습니다</div>';
+  } else {
+    searchResults.innerHTML = matches.map(([en, info]) =>
+      `<div class="sr-item" onclick="onSearchSelect('${en}')">
+        <span class="sr-flag">${info.flag}</span>
+        <span class="sr-name">${info.ko}</span>
+        <span class="sr-name-en">${en}</span>
+      </div>`
+    ).join('');
+  }
+  searchResults.classList.add('show');
+});
+
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    searchResults.classList.remove('show');
+    searchInput.blur();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) {
+    searchResults.classList.remove('show');
+  }
+});
+
+function onSearchSelect(name) {
+  searchResults.classList.remove('show');
+  searchInput.value = '';
+  selectCountry(name);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  init3DGlobe();
+});
+</script>
+
+</body>
+</html>
