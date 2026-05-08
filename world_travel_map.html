@@ -461,10 +461,13 @@
 
     /* ── 모바일 ── */
     @media (max-width: 768px) {
-      .header { padding: 0 12px; gap: 8px; height: 50px; }
-      .logo { font-size: 13px; }
-      .logo span { font-size: 16px; }
+      .header { padding: 0 12px; gap: 6px; height: 50px; flex-wrap: wrap; height: auto; padding: 8px 12px; }
+      .logo { font-size: 0; }
+      .logo span { font-size: 18px; }
+      .search-wrap { max-width: none; flex: 1; order: 3; width: 100%; }
       .search-input { font-size: 14px; padding: 9px 12px 9px 36px; }
+      #modelSelect { order: 2; }
+      .view-toggle { order: 1; }
       .search-icon { left: 10px; }
       .view-btn { padding: 6px 10px; font-size: 11px; }
 
@@ -763,6 +766,38 @@ let geoData = null;
 let selectedCountry = null;
 let tappedCountry = null;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// 국기 이모지 → ISO 코드 → 이미지 URL 변환
+const FLAG_TO_ISO = {};
+for (const [name, info] of Object.entries(COUNTRY_NAMES)) {
+  if (info.flag) {
+    // 이모지 국기에서 ISO 코드 추출
+    const codePoints = [...info.flag].map(c => c.codePointAt(0) - 0x1F1E6);
+    if (codePoints.length === 2 && codePoints.every(c => c >= 0 && c < 26)) {
+      const iso = String.fromCharCode(codePoints[0] + 65, codePoints[1] + 65).toLowerCase();
+      FLAG_TO_ISO[name] = iso;
+    }
+  }
+}
+
+function flagImg(name, size = 32) {
+  const iso = FLAG_TO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/w${size * 2}/${iso}.png" width="${size}" style="border-radius:4px;vertical-align:middle;" alt="">`;
+  const info = COUNTRY_NAMES[name];
+  return info ? info.flag : '🏳️';
+}
+
+function flagImgLarge(name) {
+  const iso = FLAG_TO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/w160/${iso}.png" style="width:64px;border-radius:6px;" alt="">`;
+  const info = COUNTRY_NAMES[name];
+  return `<span style="font-size:48px;">${info ? info.flag : '🏳️'}</span>`;
+}
+
+function getKoName(name) {
+  const info = COUNTRY_NAMES[name];
+  return info ? info.ko : name;
+}
 const MODELS = {
   'gemini-3.1-flash-lite-preview': { name: 'gemini-3.1-flash-lite', rpm: 15, rpd: 500, maxTokens: 65536 },
   'gemini-2.5-flash': { name: 'gemini-2.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
@@ -939,11 +974,12 @@ async function init3DGlobe() {
     })
     .polygonLabel(d => {
       const name = d.properties.NAME;
-      const info = COUNTRY_NAMES[name];
-      const flag = info ? info.flag : '';
-      const ko = info ? info.ko : name;
-      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;">
-        <span style="font-size:16px;margin-right:6px;">${flag}</span>${ko}
+      const ko = getKoName(name);
+      const iso = FLAG_TO_ISO[name];
+      const initials = iso ? iso.toUpperCase() : name.slice(0,2).toUpperCase();
+      const fi = flagImg(name, 16);
+      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;">
+        ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}
       </div>`;
     })
     .onPolygonHover(d => {
@@ -1083,9 +1119,12 @@ async function init2DMap() {
         .attr('stroke-width', 1.5)
         .style('filter', 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.6))');
 
-      const info = findCountryByEnName(name);
+      const matched = findClosestCountryName(name);
+      const mName = matched || name;
+      const iso2d = FLAG_TO_ISO[mName];
+      const init2d = iso2d ? iso2d.toUpperCase() : mName.slice(0,2).toUpperCase();
       const tooltip = document.getElementById('tooltip');
-      tooltip.innerHTML = `<span class="tt-flag">${info?.flag || '🏳️'}</span>${info?.ko || name}`;
+      tooltip.innerHTML = `${flagImg(mName, 16)} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${init2d}</span> ${getKoName(mName)}`;
       tooltip.style.display = 'block';
       tooltip.style.left = (event.clientX + 16) + 'px';
       tooltip.style.top = (event.clientY - 10) + 'px';
@@ -1204,11 +1243,11 @@ async function selectCountry(name) {
     } else {
       // 로딩 UI 표시
       const panel = document.getElementById('infoPanel');
-      const ko = info ? info.ko : name;
-      const flag = info ? info.flag : '🏳️';
+      const ko = getKoName(name);
+      const fi = flagImgLarge(name);
       document.getElementById('infoPanelContent').innerHTML = `
         <div class="info-hero">
-          <div class="info-flag">${flag}</div>
+          <div class="info-flag">${fi}</div>
           <div class="info-country">${ko}</div>
           <div class="info-country-en">${name}</div>
         </div>
@@ -1231,7 +1270,7 @@ async function selectCountry(name) {
         console.error('AI 국가 정보 조회 실패:', e);
         document.getElementById('infoPanelContent').innerHTML = `
           <div class="info-hero">
-            <div class="info-flag">${flag}</div>
+            <div class="info-flag">${fi}</div>
             <div class="info-country">${ko}</div>
             <div class="info-country-en">${name}</div>
           </div>
@@ -1253,7 +1292,7 @@ async function selectCountry(name) {
   document.getElementById('infoPanelContent').innerHTML = `
     <!-- 헤더: 국기 + 나라이름 + 대륙 -->
     <div class="info-hero">
-      <div class="info-flag">${data.flag}</div>
+      <div class="info-flag">${flagImgLarge(name)}</div>
       <div class="info-country">${data.nameKo}</div>
       <div class="info-country-en">${data.nameEn}</div>
       <div class="info-continent">${data.continentIcon} ${data.continent}</div>
@@ -1551,11 +1590,12 @@ function closePanel() {
 // 모바일 말풍선
 // ══════════════════════════════════════════════════════════════
 function showMobileBubble(name) {
-  const info = COUNTRY_NAMES[name];
   const bubble = document.getElementById('mobileBubble');
-  document.getElementById('bubbleFlag').textContent = info ? info.flag : '🏳️';
-  document.getElementById('bubbleName').textContent = info ? info.ko : name;
-  document.getElementById('bubbleNameEn').textContent = name;
+  const iso = FLAG_TO_ISO[name];
+  const initials = iso ? iso.toUpperCase() : name.slice(0,2).toUpperCase();
+  document.getElementById('bubbleFlag').innerHTML = flagImg(name, 36);
+  document.getElementById('bubbleName').textContent = getKoName(name);
+  document.getElementById('bubbleNameEn').textContent = initials;
   bubble.style.display = 'block';
 }
 
@@ -1587,9 +1627,8 @@ searchInput.addEventListener('input', () => {
   } else {
     searchResults.innerHTML = matches.map(([en, info]) =>
       `<div class="sr-item" onclick="onSearchSelect('${en}')">
-        <span class="sr-flag">${info.flag}</span>
+        <span class="sr-flag">${flagImg(en, 20)}</span>
         <span class="sr-name">${info.ko}</span>
-        <span class="sr-name-en">${en}</span>
       </div>`
     ).join('');
   }
