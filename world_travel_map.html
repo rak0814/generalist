@@ -556,7 +556,11 @@
   <div id="bubbleFlag" style="font-size:36px;margin-bottom:6px;"></div>
   <div id="bubbleName" style="font-size:18px;font-weight:700;color:#fff;"></div>
   <div id="bubbleNameEn" style="font-size:11px;color:rgba(255,255,255,0.4);margin-top:2px;"></div>
-  <div style="margin-top:10px;font-size:11px;color:#a5b4fc;font-weight:500;">한번 더 터치하여 상세보기</div>
+  <button id="bubbleDetailBtn" onclick="openBubbleDetail()" style="
+    margin-top:12px; padding:9px 28px; background:#6366f1; color:#fff;
+    border:none; border-radius:10px; font-size:13px; font-weight:600;
+    font-family:'Noto Sans KR',sans-serif; cursor:pointer;
+  ">상세보기</button>
 </div>
 <style>
   @keyframes bubbleIn {
@@ -1056,21 +1060,12 @@ async function init3DGlobe() {
       }
       const name = d.properties.NAME;
       if (isMobile) {
-        if (tappedCountry === name) {
-          // 2차 터치 → 패널 오픈
-          tappedCountry = null;
-          hideMobileBubble();
-          selectCountry(name);
-        } else {
-          // 1차 터치 → 말풍선 표시
-          tappedCountry = name;
-          showMobileBubble(name);
-          // 하이라이트
-          globe
-            .polygonCapColor(f => f.properties.NAME === name ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.4)')
-            .polygonAltitude(f => f.properties.NAME === name ? 0.02 : 0.008)
-            .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.8)' : 'rgba(150, 180, 255, 0.3)');
-        }
+        tappedCountry = name;
+        showMobileBubble(name);
+        globe
+          .polygonCapColor(f => f.properties.NAME === name ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.4)')
+          .polygonAltitude(f => f.properties.NAME === name ? 0.02 : 0.008)
+          .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.8)' : 'rgba(150, 180, 255, 0.3)');
       } else {
         selectCountry(name);
       }
@@ -1227,26 +1222,19 @@ async function init2DMap() {
       if (!GEO_ISO[name] && idToIso[codeKey2]) GEO_ISO[name] = idToIso[codeKey2];
 
       if (isMobile) {
-        if (tappedCountry === matched) {
-          tappedCountry = null;
-          hideMobileBubble();
-          selectCountry(matched);
-        } else {
-          tappedCountry = matched;
-          showMobileBubble(matched);
-          // 하이라이트
-          d3.select('#map2d').selectAll('path')
-            .attr('fill', f => {
-              const fn = idToName[String(f.id).padStart(3, '0')] || '';
-              const fm = findClosestCountryName(fn);
-              return fm === matched ? 'rgba(99,102,241,0.5)' : 'rgba(30, 60, 120, 0.5)';
-            })
-            .attr('stroke-width', f => {
-              const fn = idToName[String(f.id).padStart(3, '0')] || '';
-              const fm = findClosestCountryName(fn);
-              return fm === matched ? 1.5 : 0.5;
-            });
-        }
+        tappedCountry = matched;
+        showMobileBubble(matched);
+        d3.select('#map2d').selectAll('path')
+          .attr('fill', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(99,102,241,0.5)' : 'rgba(30, 60, 120, 0.5)';
+          })
+          .attr('stroke-width', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 1.5 : 0.5;
+          });
       } else {
         selectCountry(matched);
       }
@@ -1645,6 +1633,13 @@ function showMobileBubble(name) {
 
 function hideMobileBubble() {
   document.getElementById('mobileBubble').style.display = 'none';
+}
+
+function openBubbleDetail() {
+  if (tappedCountry) {
+    hideMobileBubble();
+    selectCountry(tappedCountry);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
