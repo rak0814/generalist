@@ -1169,15 +1169,6 @@ async function init2DMap() {
     if (!KO_NAMES[n] && ISO_KO_EXTRA[n]) KO_NAMES[n] = ISO_KO_EXTRA[n];
   });
 
-  // 격자선
-  const graticule = d3.geoGraticule();
-  svg.append('path')
-    .datum(graticule())
-    .attr('d', path)
-    .attr('fill', 'none')
-    .attr('stroke', 'rgba(255,255,255,0.04)')
-    .attr('stroke-width', 0.5);
-
   // 국가 그리기
   const g = svg.append('g');
 
