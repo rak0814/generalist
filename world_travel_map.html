@@ -764,36 +764,81 @@ let selectedCountry = null;
 let tappedCountry = null;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
-// 국기 이모지 → ISO 코드 → 이미지 URL 변환
-const FLAG_TO_ISO = {};
-for (const [name, info] of Object.entries(COUNTRY_NAMES)) {
-  if (info.flag) {
-    // 이모지 국기에서 ISO 코드 추출
-    const codePoints = [...info.flag].map(c => c.codePointAt(0) - 0x1F1E6);
-    if (codePoints.length === 2 && codePoints.every(c => c >= 0 && c < 26)) {
-      const iso = String.fromCharCode(codePoints[0] + 65, codePoints[1] + 65).toLowerCase();
-      FLAG_TO_ISO[name] = iso;
-    }
-  }
-}
+// GeoJSON 로드 후 채워지는 ISO 매핑 (NAME → iso2)
+const GEO_ISO = {};
+
+// 전체 국가 한글명 (GeoJSON NAME 기준)
+const KO_NAMES = {
+  'Afghanistan':'아프가니스탄','Albania':'알바니아','Algeria':'알제리','Angola':'앙골라',
+  'Antarctica':'남극','Argentina':'아르헨티나','Armenia':'아르메니아','Australia':'호주',
+  'Austria':'오스트리아','Azerbaijan':'아제르바이잔','Bahamas':'바하마','Bangladesh':'방글라데시',
+  'Belarus':'벨라루스','Belgium':'벨기에','Belize':'벨리즈','Benin':'베냉',
+  'Bhutan':'부탄','Bolivia':'볼리비아','Bosnia and Herz.':'보스니아','Botswana':'보츠와나',
+  'Brazil':'브라질','Brunei':'브루나이','Bulgaria':'불가리아','Burkina Faso':'부르키나파소',
+  'Burundi':'부룬디','Cambodia':'캄보디아','Cameroon':'카메룬','Canada':'캐나다',
+  'Central African Rep.':'중앙아프리카','Chad':'차드','Chile':'칠레','China':'중국',
+  'Colombia':'콜롬비아','Congo':'콩고','Costa Rica':'코스타리카','Côte d\'Ivoire':'코트디부아르',
+  'Croatia':'크로아티아','Cuba':'쿠바','Cyprus':'키프로스','Czechia':'체코',
+  'Dem. Rep. Congo':'콩고민주공화국','Denmark':'덴마크','Djibouti':'지부티',
+  'Dominican Rep.':'도미니카공화국','Ecuador':'에콰도르','Egypt':'이집트',
+  'El Salvador':'엘살바도르','Eq. Guinea':'적도기니','Eritrea':'에리트레아',
+  'Estonia':'에스토니아','Ethiopia':'에티오피아','Falkland Is.':'포클랜드',
+  'Fiji':'피지','Finland':'핀란드','Fr. S. Antarctic Lands':'프랑스령 남극',
+  'Gabon':'가봉','Gambia':'감비아','Georgia':'조지아','Germany':'독일',
+  'Ghana':'가나','Greece':'그리스','Greenland':'그린란드','Guatemala':'과테말라',
+  'Guinea':'기니','Guinea-Bissau':'기니비사우','Guyana':'가이아나',
+  'Haiti':'아이티','Honduras':'온두라스','Hungary':'헝가리','Iceland':'아이슬란드',
+  'India':'인도','Indonesia':'인도네시아','Iran':'이란','Iraq':'이라크',
+  'Ireland':'아일랜드','Israel':'이스라엘','Italy':'이탈리아','Jamaica':'자메이카',
+  'Japan':'일본','Jordan':'요르단','Kazakhstan':'카자흐스탄','Kenya':'케냐',
+  'Kosovo':'코소보','Kuwait':'쿠웨이트','Kyrgyzstan':'키르기스스탄','Laos':'라오스',
+  'Latvia':'라트비아','Lebanon':'레바논','Lesotho':'레소토','Liberia':'라이베리아',
+  'Libya':'리비아','Lithuania':'리투아니아','Luxembourg':'룩셈부르크',
+  'Macedonia':'북마케도니아','Madagascar':'마다가스카르','Malawi':'말라위',
+  'Malaysia':'말레이시아','Mali':'말리','Mauritania':'모리타니','Mexico':'멕시코',
+  'Moldova':'몰도바','Mongolia':'몽골','Montenegro':'몬테네그로','Morocco':'모로코',
+  'Mozambique':'모잠비크','Myanmar':'미얀마','Namibia':'나미비아','Nepal':'네팔',
+  'Netherlands':'네덜란드','New Caledonia':'뉴칼레도니아','New Zealand':'뉴질랜드',
+  'Nicaragua':'니카라과','Niger':'니제르','Nigeria':'나이지리아','North Korea':'북한',
+  'Norway':'노르웨이','Oman':'오만','Pakistan':'파키스탄','Palestine':'팔레스타인',
+  'Panama':'파나마','Papua New Guinea':'파푸아뉴기니','Paraguay':'파라과이',
+  'Peru':'페루','Philippines':'필리핀','Poland':'폴란드','Portugal':'포르투갈',
+  'Puerto Rico':'푸에르토리코','Qatar':'카타르','Romania':'루마니아','Russia':'러시아',
+  'Rwanda':'르완다','S. Sudan':'남수단','Saudi Arabia':'사우디아라비아',
+  'Senegal':'세네갈','Serbia':'세르비아','Sierra Leone':'시에라리온',
+  'Singapore':'싱가포르','Slovakia':'슬로바키아','Slovenia':'슬로베니아',
+  'Solomon Is.':'솔로몬제도','Somalia':'소말리아','South Africa':'남아프리카공화국',
+  'South Korea':'대한민국','Spain':'스페인','Sri Lanka':'스리랑카','Sudan':'수단',
+  'Suriname':'수리남','Swaziland':'에스와티니','Sweden':'스웨덴','Switzerland':'스위스',
+  'Syria':'시리아','Taiwan':'대만','Tajikistan':'타지키스탄','Tanzania':'탄자니아',
+  'Thailand':'태국','Timor-Leste':'동티모르','Togo':'토고',
+  'Trinidad and Tobago':'트리니다드토바고','Tunisia':'튀니지','Turkey':'튀르키예',
+  'Turkmenistan':'투르크메니스탄','Uganda':'우간다','Ukraine':'우크라이나',
+  'United Arab Emirates':'아랍에미리트','United Kingdom':'영국',
+  'United States of America':'미국','Uruguay':'우루과이','Uzbekistan':'우즈베키스탄',
+  'Vanuatu':'바누아투','Venezuela':'베네수엘라','Vietnam':'베트남',
+  'W. Sahara':'서사하라','Yemen':'예멘','Zambia':'잠비아','Zimbabwe':'짐바브웨',
+  'France':'프랑스','Nepal':'네팔',
+};
 
 function flagImg(name, size = 32) {
-  const iso = FLAG_TO_ISO[name];
-  if (iso) return `<img src="https://flagcdn.com/${iso}.svg" width="${size}" style="border-radius:3px;vertical-align:middle;" alt="">`;
-  const info = COUNTRY_NAMES[name];
-  return info ? info.flag : '🏳️';
+  const iso = GEO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="${size}" style="border-radius:3px;vertical-align:middle;" alt="">`;
+  return '🏳️';
 }
 
 function flagImgLarge(name) {
-  const iso = FLAG_TO_ISO[name];
-  if (iso) return `<img src="https://flagcdn.com/${iso}.svg" style="width:64px;border-radius:6px;" alt="">`;
-  const info = COUNTRY_NAMES[name];
-  return `<span style="font-size:48px;">${info ? info.flag : '🏳️'}</span>`;
+  const iso = GEO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" style="width:64px;border-radius:6px;" alt="">`;
+  return '<span style="font-size:48px;">🏳️</span>';
+}
+
+function getIso(name) {
+  return GEO_ISO[name] || '';
 }
 
 function getKoName(name) {
-  const info = COUNTRY_NAMES[name];
-  return info ? info.ko : name;
+  return KO_NAMES[name] || name;
 }
 const MODELS = {
   'gemini-3.1-flash-lite-preview': { name: 'gemini-3.1-flash-lite', rpm: 15, rpd: 500, maxTokens: 65536 },
@@ -943,6 +988,13 @@ async function init3DGlobe() {
   try {
     const res = await fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson');
     geoData = await res.json();
+    // ISO 코드 매핑 구축
+    geoData.features.forEach(f => {
+      const p = f.properties;
+      if (p.ISO_A2 && p.ISO_A2 !== '-99') {
+        GEO_ISO[p.NAME] = p.ISO_A2;
+      }
+    });
   } catch(e) {
     console.error('GeoJSON 로드 실패:', e);
     document.getElementById('globe3d').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">3D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
@@ -972,8 +1024,7 @@ async function init3DGlobe() {
     .polygonLabel(d => {
       const name = d.properties.NAME;
       const ko = getKoName(name);
-      const iso = FLAG_TO_ISO[name];
-      const initials = iso ? iso.toUpperCase() : name.slice(0,2).toUpperCase();
+      const initials = d.properties.ISO_A2 && d.properties.ISO_A2 !== '-99' ? d.properties.ISO_A2 : name.slice(0,2).toUpperCase();
       const fi = flagImg(name, 16);
       return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;">
         ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}
@@ -1070,7 +1121,7 @@ async function init2DMap() {
   try {
     const [worldRes, countryNamesRes] = await Promise.all([
       fetch('https://unpkg.com/world-atlas@2/countries-110m.json'),
-      fetch('https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/slim-3/slim-3.json')
+      fetch('https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/slim-2/slim-2.json')
     ]);
     world = await worldRes.json();
     countryNamesList = await countryNamesRes.json();
@@ -1081,8 +1132,41 @@ async function init2DMap() {
   }
   const countries = topojson.feature(world, world.objects.countries);
   const idToName = {};
+  const idToIso = {};
   countryNamesList.forEach(c => {
     idToName[c['country-code']] = c.name;
+    if (c['alpha-2']) idToIso[c['country-code']] = c['alpha-2'];
+  });
+
+  // ISO-3166 국가명 → GEO_ISO, KO_NAMES 보완
+  const ISO_KO_EXTRA = {
+    'Korea, Republic of':'대한민국','Korea (Republic of)':'대한민국',
+    'Russian Federation':'러시아','Viet Nam':'베트남',
+    'Iran, Islamic Republic of':'이란','Iran (Islamic Republic of)':'이란',
+    'Syrian Arab Republic':'시리아','Czech Republic':'체코','Czechia':'체코',
+    'Bolivia (Plurinational State of)':'볼리비아','Bolivia, Plurinational State of':'볼리비아',
+    'Venezuela (Bolivarian Republic of)':'베네수엘라','Venezuela, Bolivarian Republic of':'베네수엘라',
+    'Tanzania, United Republic of':'탄자니아','United Republic of Tanzania':'탄자니아',
+    'Congo, Democratic Republic of the':'콩고민주공화국','Democratic Republic of the Congo':'콩고민주공화국',
+    'Congo':'콩고','Republic of the Congo':'콩고',
+    'Moldova, Republic of':'몰도바','Republic of Moldova':'몰도바',
+    'Macedonia, the former Yugoslav Republic of':'북마케도니아','North Macedonia':'북마케도니아',
+    'Lao People\'s Democratic Republic':'라오스',
+    'Brunei Darussalam':'브루나이','Myanmar':'미얀마',
+    'Palestine, State of':'팔레스타인','Taiwan, Province of China':'대만',
+    'Côte d\'Ivoire':'코트디부아르','Ivory Coast':'코트디부아르',
+    'Timor-Leste':'동티모르','East Timor':'동티모르',
+    'Eswatini':'에스와티니','Swaziland':'에스와티니',
+    'Cabo Verde':'카보베르데','Cape Verde':'카보베르데',
+    'United States':'미국','United States of America':'미국',
+    'United Kingdom of Great Britain and Northern Ireland':'영국',
+    'United Kingdom':'영국',
+  };
+  countryNamesList.forEach(c => {
+    const n = c.name;
+    const iso = c['alpha-2'];
+    if (iso && !GEO_ISO[n]) GEO_ISO[n] = iso;
+    if (!KO_NAMES[n] && ISO_KO_EXTRA[n]) KO_NAMES[n] = ISO_KO_EXTRA[n];
   });
 
   // 격자선
@@ -1109,19 +1193,22 @@ async function init2DMap() {
     .style('cursor', 'pointer')
     .style('transition', 'fill 0.2s')
     .on('mouseover', function(event, d) {
-      const name = idToName[String(d.id).padStart(3, '0')] || 'Unknown';
+      const codeKey = String(d.id).padStart(3, '0');
+      const name = idToName[codeKey] || 'Unknown';
+      const iso = idToIso[codeKey] || '';
+      // GEO_ISO 동적 보완
+      if (iso && !GEO_ISO[name]) GEO_ISO[name] = iso;
       d3.select(this)
         .attr('fill', 'rgba(99, 102, 241, 0.5)')
         .attr('stroke', 'rgba(165, 180, 252, 0.9)')
         .attr('stroke-width', 1.5)
         .style('filter', 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.6))');
 
-      const matched = findClosestCountryName(name);
-      const mName = matched || name;
-      const iso2d = FLAG_TO_ISO[mName];
-      const init2d = iso2d ? iso2d.toUpperCase() : mName.slice(0,2).toUpperCase();
+      // ISO로 직접 국기 표시
+      const flagHtml = iso ? `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="16" style="border-radius:3px;vertical-align:middle;">` : '🏳️';
+      const koName = getKoName(name) || getKoName(findClosestCountryName(name) || name);
       const tooltip = document.getElementById('tooltip');
-      tooltip.innerHTML = `${flagImg(mName, 16)} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${init2d}</span> ${getKoName(mName)}`;
+      tooltip.innerHTML = `${flagHtml} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${iso || name.slice(0,2).toUpperCase()}</span> ${koName}`;
       tooltip.style.display = 'block';
       tooltip.style.left = (event.clientX + 16) + 'px';
       tooltip.style.top = (event.clientY - 10) + 'px';
@@ -1140,9 +1227,14 @@ async function init2DMap() {
       document.getElementById('tooltip').style.display = 'none';
     })
     .on('click', function(event, d) {
-      const name = idToName[String(d.id).padStart(3, '0')] || '';
-      const matched = findClosestCountryName(name);
+      const codeKey2 = String(d.id).padStart(3, '0');
+      const name = idToName[codeKey2] || '';
+      const matched = findClosestCountryName(name) || name;
       if (!matched) return;
+
+      // 2D에서도 GEO_ISO에 ISO 등록 (없으면)
+      if (!GEO_ISO[matched] && idToIso[codeKey2]) GEO_ISO[matched] = idToIso[codeKey2];
+      if (!GEO_ISO[name] && idToIso[codeKey2]) GEO_ISO[name] = idToIso[codeKey2];
 
       if (isMobile) {
         if (tappedCountry === matched) {
@@ -1588,8 +1680,7 @@ function closePanel() {
 // ══════════════════════════════════════════════════════════════
 function showMobileBubble(name) {
   const bubble = document.getElementById('mobileBubble');
-  const iso = FLAG_TO_ISO[name];
-  const initials = iso ? iso.toUpperCase() : name.slice(0,2).toUpperCase();
+  const initials = getIso(name) || name.slice(0,2).toUpperCase();
   document.getElementById('bubbleFlag').innerHTML = flagImg(name, 36);
   document.getElementById('bubbleName').textContent = getKoName(name);
   document.getElementById('bubbleNameEn').textContent = initials;
@@ -1613,19 +1704,20 @@ searchInput.addEventListener('input', () => {
     return;
   }
 
-  const matches = Object.entries(COUNTRY_NAMES)
-    .filter(([en, info]) =>
-      info.ko.includes(q) || en.toLowerCase().includes(q)
+  const matches = Object.entries(KO_NAMES)
+    .filter(([en, ko]) =>
+      ko.includes(q) || en.toLowerCase().includes(q)
     )
     .slice(0, 8);
 
   if (matches.length === 0) {
     searchResults.innerHTML = '<div class="sr-item" style="color:rgba(255,255,255,0.35);cursor:default;">검색 결과가 없습니다</div>';
   } else {
-    searchResults.innerHTML = matches.map(([en, info]) =>
-      `<div class="sr-item" onclick="onSearchSelect('${en}')">
+    searchResults.innerHTML = matches.map(([en, ko]) =>
+      `<div class="sr-item" onclick="onSearchSelect('${en.replace(/'/g, "\\'")}')">
         <span class="sr-flag">${flagImg(en, 20)}</span>
-        <span class="sr-name">${info.ko}</span>
+        <span class="sr-name">${ko}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.3);margin-left:4px;">${getIso(en)}</span>
       </div>`
     ).join('');
   }
