@@ -266,6 +266,7 @@
       display: flex;
       align-items: center;
       gap: 4px;
+      white-space: nowrap;
     }
     .info-item-value {
       font-size: 13px;
@@ -408,7 +409,7 @@
       padding: 5px 0; font-size: 12px;
     }
     .emergency-row + .emergency-row { border-top: 1px solid rgba(255,255,255,0.04); }
-    .emergency-label { color: rgba(255,255,255,0.4); }
+    .emergency-label { color: rgba(255,255,255,0.4); white-space: nowrap; flex-shrink: 0; margin-right: 10px; }
     .emergency-value { font-weight: 600; color: #fff; text-align: right; }
     .emergency-warn {
       margin-top: 10px; padding: 8px 12px;
@@ -1370,10 +1371,10 @@ async function selectCountry(name) {
   const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
 
   document.getElementById('infoPanelContent').innerHTML = `
-    <!-- 헤더: 국기 + 나라이름 + 대륙 -->
+    <!-- 헤더: 국기 + 나라이름 + 수도 + 대륙 -->
     <div class="info-hero">
       <div class="info-flag">${flagImgLarge(name)}</div>
-      <div class="info-country">${data.nameKo}</div>
+      <div class="info-country">${data.nameKo} <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${data.capital}</span></div>
       <div class="info-country-en">${data.nameEn}</div>
       <div class="info-continent">${data.continentIcon} ${data.continent}</div>
     </div>
@@ -1383,25 +1384,33 @@ async function selectCountry(name) {
       <div class="info-section-title">기본 정보</div>
       <div class="info-grid">
         <div class="info-item">
-          <div class="info-item-label">🏛 수도</div>
-          <div class="info-item-value">${data.capital}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-item-label">🗣 사용 언어</div>
-          <div class="info-item-value">${data.language}</div>
-        </div>
-        <div class="info-item">
           <div class="info-item-label">🕐 시차</div>
           <div class="info-item-value">${data.timezone}</div>
         </div>
         <div class="info-item">
-          <div class="info-item-label">💰 통화</div>
-          <div class="info-item-value">${data.currency.name}<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">${data.currency.rate}</span></div>
+          <div class="info-item-label">🔌 콘센트</div>
+          <div class="info-item-value">${data.plug.voltage}<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">${data.plug.type}</span></div>
         </div>
       </div>
     </div>
 
-    <!-- 2. 대표도시 -->
+    <!-- 2. 사용언어 + 기본회화 -->
+    <div class="info-section">
+      <div class="info-section-title">🗣 사용 언어 — ${data.language}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.phrases.map(p => `
+          <div class="phrase-item">
+            <span class="phrase-ko">${p.ko}</span>
+            <div class="phrase-right">
+              <div class="phrase-local">${p.local}</div>
+              <div class="phrase-pron">${p.pron}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 3. 대표도시 -->
     <div class="info-section">
       <div class="info-section-title">대표 도시</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1417,7 +1426,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 3. 랜드마크 -->
+    <!-- 4. 랜드마크 -->
     <div class="info-section">
       <div class="info-section-title">랜드마크</div>
       <div class="landmark-list">
@@ -1427,22 +1436,6 @@ async function selectCountry(name) {
             <div>
               <div class="landmark-name">${l.name}</div>
               <div class="landmark-name-en">${l.nameEn}</div>
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-
-    <!-- 4. 기본회화 -->
-    <div class="info-section">
-      <div class="info-section-title">기본 회화</div>
-      <div style="display:flex;flex-direction:column;gap:6px;">
-        ${data.phrases.map(p => `
-          <div class="phrase-item">
-            <span class="phrase-ko">${p.ko}</span>
-            <div class="phrase-right">
-              <div class="phrase-local">${p.local}</div>
-              <div class="phrase-pron">${p.pron}</div>
             </div>
           </div>
         `).join('')}
@@ -1480,12 +1473,12 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 7. 현지 물가 (화폐/환율) -->
+    <!-- 7. 통화 + 현지 물가 -->
     <div class="info-section">
-      <div class="info-section-title">현지 물가</div>
+      <div class="info-section-title">통화 / 현지 물가</div>
       <div class="info-grid">
         <div class="info-item full">
-          <div class="info-item-label">💱 환율</div>
+          <div class="info-item-label">💱 통화 · 환율</div>
           <div class="info-item-value">${data.currency.name} — ${data.currency.rate}</div>
         </div>
         <div class="info-item">
@@ -1499,7 +1492,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 8. 비행시간 / 직항·경유 -->
+    <!-- 8. 항공편 -->
     <div class="info-section">
       <div class="info-section-title">항공편</div>
       <div class="info-grid">
@@ -1537,26 +1530,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 10. 콘센트/전압 -->
-    <div class="info-section">
-      <div class="info-section-title">콘센트 / 전압</div>
-      <div class="info-grid">
-        <div class="info-item">
-          <div class="info-item-label">⚡ 전압</div>
-          <div class="info-item-value">${data.plug.voltage}</div>
-        </div>
-        <div class="info-item">
-          <div class="info-item-label">🔌 플러그</div>
-          <div class="info-item-value">${data.plug.type}</div>
-        </div>
-        <div class="info-item full">
-          <div class="info-item-label">💡 참고</div>
-          <div class="info-item-value" style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.7);">${data.plug.note}</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 11. 문화/매너 -->
+    <!-- 10. 문화/매너 -->
     <div class="info-section">
       <div class="info-section-title">문화 / 매너</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1569,7 +1543,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 12. 교통정보 -->
+    <!-- 11. 교통정보 -->
     <div class="info-section">
       <div class="info-section-title">교통 정보</div>
       <div style="display:flex;flex-direction:column;gap:6px;">
@@ -1585,7 +1559,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 13. 여행 추천 일정 -->
+    <!-- 12. 추천 일정 -->
     <div class="info-section">
       <div class="info-section-title">추천 일정</div>
       <div style="display:flex;flex-direction:column;gap:10px;">
@@ -1606,7 +1580,7 @@ async function selectCountry(name) {
       </div>
     </div>
 
-    <!-- 14. 긴급 연락처 -->
+    <!-- 13. 긴급 연락처 -->
     <div class="info-section">
       <div class="info-section-title">긴급 연락처</div>
       <div class="emergency-card">
@@ -1619,18 +1593,11 @@ async function selectCountry(name) {
           <span class="emergency-value">${data.emergency.embassy}</span>
         </div>
         <div class="emergency-row">
-          <span class="emergency-label">📍 대사관 주소</span>
+          <span class="emergency-label">📍 주소</span>
           <span class="emergency-value" style="font-size:10px;">${data.emergency.embassyAddr}</span>
         </div>
         <div class="emergency-warn">⚠️ ${data.emergency.insurance}</div>
       </div>
-    </div>
-
-    <!-- VGT 연결 -->
-    <div class="info-section">
-      <button class="vgt-btn" onclick="window.open('https://www.verygoodtour.com','_blank')">
-        ✈️ VGT ${data.nameKo} 상품 보기
-      </button>
     </div>
   `;
 
