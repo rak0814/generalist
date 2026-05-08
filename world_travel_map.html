@@ -827,6 +827,69 @@ const KO_NAMES = {
   'France':'프랑스','Nepal':'네팔',
 };
 
+const CAPITALS = {
+  'Afghanistan':'카불','Albania':'티라나','Algeria':'알제','Angola':'루안다',
+  'Antarctica':'','Argentina':'부에노스아이레스','Armenia':'예레반','Australia':'캔버라',
+  'Austria':'빈','Azerbaijan':'바쿠','Bahamas':'나소','Bangladesh':'다카',
+  'Belarus':'민스크','Belgium':'브뤼셀','Belize':'벨모판','Benin':'포르토노보',
+  'Bhutan':'팀부','Bolivia':'수크레','Bosnia and Herz.':'사라예보','Botswana':'가보로네',
+  'Brazil':'브라질리아','Brunei':'반다르스리브가완','Bulgaria':'소피아','Burkina Faso':'와가두구',
+  'Burundi':'기테가','Cambodia':'프놈펜','Cameroon':'야운데','Canada':'오타와',
+  'Central African Rep.':'방기','Chad':'은자메나','Chile':'산티아고','China':'베이징',
+  'Colombia':'보고타','Congo':'브라자빌','Costa Rica':'산호세','Côte d\'Ivoire':'야무수크로',
+  'Croatia':'자그레브','Cuba':'아바나','Cyprus':'니코시아','Czechia':'프라하',
+  'Dem. Rep. Congo':'킨샤사','Denmark':'코펜하겐','Djibouti':'지부티',
+  'Dominican Rep.':'산토도밍고','Ecuador':'키토','Egypt':'카이로',
+  'El Salvador':'산살바도르','Eq. Guinea':'말라보','Eritrea':'아스마라',
+  'Estonia':'탈린','Ethiopia':'아디스아바바','Falkland Is.':'스탠리',
+  'Fiji':'수바','Finland':'헬싱키','France':'파리',
+  'Fr. S. Antarctic Lands':'','Gabon':'리브르빌','Gambia':'반줄',
+  'Georgia':'트빌리시','Germany':'베를린','Ghana':'아크라',
+  'Greece':'아테네','Greenland':'누크','Guatemala':'과테말라시티',
+  'Guinea':'코나크리','Guinea-Bissau':'비사우','Guyana':'조지타운',
+  'Haiti':'포르토프랭스','Honduras':'테구시갈파','Hungary':'부다페스트',
+  'Iceland':'레이캬비크','India':'뉴델리','Indonesia':'자카르타',
+  'Iran':'테헤란','Iraq':'바그다드','Ireland':'더블린',
+  'Israel':'예루살렘','Italy':'로마','Jamaica':'킹스턴',
+  'Japan':'도쿄','Jordan':'암만','Kazakhstan':'아스타나',
+  'Kenya':'나이로비','Kosovo':'프리슈티나','Kuwait':'쿠웨이트시티',
+  'Kyrgyzstan':'비슈케크','Laos':'비엔티안','Latvia':'리가',
+  'Lebanon':'베이루트','Lesotho':'마세루','Liberia':'몬로비아',
+  'Libya':'트리폴리','Lithuania':'빌뉴스','Luxembourg':'룩셈부르크',
+  'Macedonia':'스코페','Madagascar':'안타나나리보','Malawi':'릴롱궤',
+  'Malaysia':'쿠알라룸푸르','Mali':'바마코','Mauritania':'누악쇼트',
+  'Mexico':'멕시코시티','Moldova':'키시너우','Mongolia':'울란바토르',
+  'Montenegro':'포드고리차','Morocco':'라바트','Mozambique':'마푸투',
+  'Myanmar':'네피도','Namibia':'빈트후크','Nepal':'카트만두',
+  'Netherlands':'암스테르담','New Caledonia':'누메아','New Zealand':'웰링턴',
+  'Nicaragua':'마나과','Niger':'니아메','Nigeria':'아부자',
+  'North Korea':'평양','Norway':'오슬로','Oman':'무스카트',
+  'Pakistan':'이슬라마바드','Palestine':'라말라','Panama':'파나마시티',
+  'Papua New Guinea':'포트모르즈비','Paraguay':'아순시온','Peru':'리마',
+  'Philippines':'마닐라','Poland':'바르샤바','Portugal':'리스본',
+  'Puerto Rico':'산후안','Qatar':'도하','Romania':'부쿠레슈티',
+  'Russia':'모스크바','Rwanda':'키갈리','S. Sudan':'주바',
+  'Saudi Arabia':'리야드','Senegal':'다카르','Serbia':'베오그라드',
+  'Sierra Leone':'프리타운','Singapore':'싱가포르','Slovakia':'브라티슬라바',
+  'Slovenia':'류블랴나','Solomon Is.':'호니아라','Somalia':'모가디슈',
+  'South Africa':'프리토리아','South Korea':'서울','Spain':'마드리드',
+  'Sri Lanka':'스리자야와르데네푸라코테','Sudan':'하르툼','Suriname':'파라마리보',
+  'Swaziland':'음바바네','Sweden':'스톡홀름','Switzerland':'베른',
+  'Syria':'다마스쿠스','Taiwan':'타이베이','Tajikistan':'두샨베',
+  'Tanzania':'도도마','Thailand':'방콕','Timor-Leste':'딜리',
+  'Togo':'로메','Trinidad and Tobago':'포트오브스페인','Tunisia':'튀니스',
+  'Turkey':'앙카라','Turkmenistan':'아시가바트','Uganda':'캄팔라',
+  'Ukraine':'키이우','United Arab Emirates':'아부다비',
+  'United Kingdom':'런던','United States of America':'워싱턴 D.C.',
+  'Uruguay':'몬테비데오','Uzbekistan':'타슈켄트',
+  'Vanuatu':'포트빌라','Venezuela':'카라카스','Vietnam':'하노이',
+  'W. Sahara':'엘아이운','Yemen':'사나','Zambia':'루사카','Zimbabwe':'하라레',
+};
+
+function getCapital(name) {
+  return CAPITALS[name] || '';
+}
+
 function flagImg(name, size = 32) {
   const iso = GEO_ISO[name];
   if (iso) return `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="${size}" style="border-radius:3px;vertical-align:middle;" alt="">`;
@@ -1032,8 +1095,9 @@ async function init3DGlobe() {
       const ko = getKoName(name);
       const initials = d.properties.ISO_A2 && d.properties.ISO_A2 !== '-99' ? d.properties.ISO_A2 : name.slice(0,2).toUpperCase();
       const fi = flagImg(name, 16);
+      const cap = getCapital(name);
       return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;">
-        ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}
+        ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}${cap ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:2px;">${cap}</span>` : ''}
       </div>`;
     })
     .onPolygonHover(d => {
@@ -1196,7 +1260,8 @@ async function init2DMap() {
       const flagHtml = iso ? `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="16" style="border-radius:3px;vertical-align:middle;">` : '🏳️';
       const koName = getKoName(name) || getKoName(findClosestCountryName(name) || name);
       const tooltip = document.getElementById('tooltip');
-      tooltip.innerHTML = `${flagHtml} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${iso || name.slice(0,2).toUpperCase()}</span> ${koName}`;
+      const cap2d = getCapital(name) || getCapital(findClosestCountryName(name) || '');
+      tooltip.innerHTML = `${flagHtml} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${iso || name.slice(0,2).toUpperCase()}</span> ${koName}${cap2d ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:6px;">${cap2d}</span>` : ''}`;
       tooltip.style.display = 'block';
       tooltip.style.left = (event.clientX + 16) + 'px';
       tooltip.style.top = (event.clientY - 10) + 'px';
@@ -1628,8 +1693,9 @@ function closePanel() {
 function showMobileBubble(name) {
   const bubble = document.getElementById('mobileBubble');
   const initials = getIso(name) || name.slice(0,2).toUpperCase();
-  document.getElementById('bubbleFlag').innerHTML = flagImg(name, 36);
-  document.getElementById('bubbleName').textContent = getKoName(name);
+  const cap = getCapital(name);
+  document.getElementById('bubbleFlag').innerHTML = flagImg(name, 24);
+  document.getElementById('bubbleName').innerHTML = getKoName(name) + (cap ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:4px;">${cap}</span>` : '');
   document.getElementById('bubbleNameEn').textContent = initials;
   bubble.style.display = 'flex';
 }
