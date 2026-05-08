@@ -1857,7 +1857,13 @@ document.addEventListener('click', (e) => {
 function onSearchSelect(name) {
   searchResults.classList.remove('show');
   searchInput.value = '';
-  selectCountry(name);
+  if (isMobile) {
+    tappedCountry = name;
+    showMobileBubble(name);
+    moveGlobeCamera(name);
+  } else {
+    selectCountry(name);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════
