@@ -105,7 +105,7 @@
       transition: background 0.15s;
       font-size: 13px;
     }
-    .sr-item:hover { background: rgba(255,255,255,0.06); }
+    .sr-item:hover, .sr-item.active { background: rgba(255,255,255,0.06); }
     .sr-item:first-child { border-radius: 12px 12px 0 0; }
     .sr-item:last-child { border-radius: 0 0 12px 12px; }
     .sr-flag { font-size: 20px; }
@@ -1066,6 +1066,9 @@ async function init3DGlobe() {
         GEO_ISO[p.NAME] = p.ISO_A2;
       }
     });
+    // Natural Earth에서 ISO_A2가 -99인 국가 보완
+    const ISO_FIXES = { 'France':'FR', 'Norway':'NO', 'N. Cyprus':'CY', 'Somaliland':'SO' };
+    Object.entries(ISO_FIXES).forEach(([n, iso]) => { if (!GEO_ISO[n]) GEO_ISO[n] = iso; });
   } catch(e) {
     console.error('GeoJSON 로드 실패:', e);
     document.getElementById('globe3d').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">3D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
@@ -1088,10 +1091,7 @@ async function init3DGlobe() {
     })
     .polygonSideColor(() => 'rgba(99, 102, 241, 0.08)')
     .polygonStrokeColor(() => 'rgba(150, 180, 255, 0.3)')
-    .polygonAltitude(d => {
-      if (selectedCountry && d.properties.NAME === selectedCountry) return 0.025;
-      return 0.008;
-    })
+    .polygonAltitude(() => 0.008)
     .polygonLabel(d => {
       const name = d.properties.NAME;
       const ko = getKoName(name);
@@ -1110,13 +1110,8 @@ async function init3DGlobe() {
           if (d && f === d) return 'rgba(99, 102, 241, 0.35)';
           return 'rgba(30, 60, 120, 0.4)';
         })
-        .polygonAltitude(f => {
-          if (selectedCountry && f.properties.NAME === selectedCountry) return 0.025;
-          if (d && f === d) return 0.02;
-          return 0.008;
-        })
         .polygonStrokeColor(f => {
-          if (d && f === d) return 'rgba(165, 180, 252, 0.8)';
+          if (d && f === d) return 'rgba(165, 180, 252, 0.9)';
           return 'rgba(150, 180, 255, 0.3)';
         });
     })
@@ -1133,8 +1128,7 @@ async function init3DGlobe() {
         showMobileBubble(name);
         globe
           .polygonCapColor(f => f.properties.NAME === name ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.4)')
-          .polygonAltitude(f => f.properties.NAME === name ? 0.02 : 0.008)
-          .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.8)' : 'rgba(150, 180, 255, 0.3)');
+          .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.3)');
       } else {
         selectCountry(name);
       }
@@ -1158,13 +1152,17 @@ async function init3DGlobe() {
 // 2D 지도
 // ══════════════════════════════════════════════════════════════
 let map2dInited = false;
+let map2dSvg = null, map2dG = null, map2dZoom = null, map2dProjection = null;
+let map2dIdToName = {}, map2dIdToIso = {};
+const MAP2D_W = 960, MAP2D_H = 500;
+
 async function init2DMap() {
   if (map2dInited) return;
   map2dInited = true;
 
   const container = document.getElementById('map2d');
-  const width = 960;
-  const height = 500;
+  const width = MAP2D_W;
+  const height = MAP2D_H;
 
   const svg = d3.select('#map2d')
     .append('svg')
@@ -1177,6 +1175,7 @@ async function init2DMap() {
   const projection = d3.geoNaturalEarth1()
     .scale(160)
     .translate([width / 2, height / 2]);
+  map2dProjection = projection;
 
   const path = d3.geoPath().projection(projection);
 
@@ -1200,6 +1199,8 @@ async function init2DMap() {
     idToName[c['country-code']] = c.name;
     if (c['alpha-2']) idToIso[c['country-code']] = c['alpha-2'];
   });
+  map2dIdToName = idToName;
+  map2dIdToIso = idToIso;
 
   // ISO-3166 국가명 → GEO_ISO, KO_NAMES 보완
   const ISO_KO_EXTRA = {
@@ -1234,6 +1235,8 @@ async function init2DMap() {
 
   // 국가 그리기
   const g = svg.append('g');
+  map2dSvg = svg;
+  map2dG = g;
 
   g.selectAll('path')
     .data(countries.features)
@@ -1255,8 +1258,7 @@ async function init2DMap() {
       d3.select(this)
         .attr('fill', 'rgba(99, 102, 241, 0.5)')
         .attr('stroke', 'rgba(165, 180, 252, 0.9)')
-        .attr('stroke-width', 1.5)
-        .style('filter', 'drop-shadow(0 0 8px rgba(99, 102, 241, 0.6))');
+        .attr('stroke-width', 1.5);
 
       // ISO로 직접 국기 표시
       const flagHtml = iso ? `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="16" style="border-radius:3px;vertical-align:middle;">` : '🏳️';
@@ -1273,12 +1275,14 @@ async function init2DMap() {
       tooltip.style.left = (event.clientX + 16) + 'px';
       tooltip.style.top = (event.clientY - 10) + 'px';
     })
-    .on('mouseout', function() {
+    .on('mouseout', function(event, d) {
+      const ck = String(d.id).padStart(3, '0');
+      const nm = findClosestCountryName(idToName[ck] || '') || '';
+      const isSel = selectedCountry && nm === selectedCountry;
       d3.select(this)
-        .attr('fill', d => (selectedCountry && getCountryEnName(d) === selectedCountry) ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)')
-        .attr('stroke', 'rgba(150, 180, 255, 0.2)')
-        .attr('stroke-width', 0.5)
-        .style('filter', 'none');
+        .attr('fill', isSel ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)')
+        .attr('stroke', isSel ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)')
+        .attr('stroke-width', isSel ? 1.5 : 0.5);
       document.getElementById('tooltip').style.display = 'none';
     })
     .on('click', function(event, d) {
@@ -1298,7 +1302,12 @@ async function init2DMap() {
           .attr('fill', f => {
             const fn = idToName[String(f.id).padStart(3, '0')] || '';
             const fm = findClosestCountryName(fn);
-            return fm === matched ? 'rgba(99,102,241,0.5)' : 'rgba(30, 60, 120, 0.5)';
+            return fm === matched ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.5)';
+          })
+          .attr('stroke', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
           })
           .attr('stroke-width', f => {
             const fn = idToName[String(f.id).padStart(3, '0')] || '';
@@ -1307,6 +1316,23 @@ async function init2DMap() {
           });
       } else {
         selectCountry(matched);
+        // 이전 선택 해제 + 새 선택 반영
+        d3.select('#map2d').selectAll('path')
+          .attr('fill', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)';
+          })
+          .attr('stroke', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
+          })
+          .attr('stroke-width', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 1.5 : 0.5;
+          });
       }
     });
 
@@ -1317,6 +1343,7 @@ async function init2DMap() {
       g.attr('transform', event.transform);
     });
   svg.call(zoom);
+  map2dZoom = zoom;
 }
 
 function findCountryByEnName(name) {
@@ -1667,17 +1694,57 @@ function moveGlobeCamera(name) {
     const feature = geoData.features.find(f => f.properties.NAME === name);
     if (feature) {
       const coords = d3.geoCentroid(feature);
-      globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: 1.8 }, 1000);
+      const pov = globe.pointOfView();
+      globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: pov.altitude }, 1000);
     }
     globe.polygonCapColor(f => {
       if (f.properties.NAME === name) return 'rgba(99, 102, 241, 0.6)';
       return 'rgba(30, 60, 120, 0.4)';
     });
-    globe.polygonAltitude(f => {
-      if (f.properties.NAME === name) return 0.025;
-      return 0.008;
-    });
   }
+  if (currentView === '2d' && map2dSvg && map2dProjection) {
+    // 선택 하이라이트
+    map2dG.selectAll('path')
+      .attr('fill', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)';
+      })
+      .attr('stroke', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
+      })
+      .attr('stroke-width', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 1.5 : 0.5;
+      });
+    // 해당 국가로 줌 이동
+    const target = map2dG.selectAll('path').filter(f => {
+      const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+      return findClosestCountryName(fn) === name;
+    });
+    if (!target.empty()) {
+      const bounds = path2dBounds(target.datum());
+      if (bounds) {
+        const [[x0, y0], [x1, y1]] = bounds;
+        const dx = x1 - x0, dy = y1 - y0;
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+        const scale = Math.min(8, 0.8 / Math.max(dx / MAP2D_W, dy / MAP2D_H));
+        const tx = MAP2D_W / 2 - scale * cx;
+        const ty = MAP2D_H / 2 - scale * cy;
+        map2dSvg.transition().duration(1000)
+          .call(map2dZoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      }
+    }
+  }
+}
+
+function path2dBounds(datum) {
+  if (!map2dProjection) return null;
+  const path = d3.geoPath().projection(map2dProjection);
+  return path.bounds(datum);
 }
 
 function closePanel() {
@@ -1686,7 +1753,6 @@ function closePanel() {
   tappedCountry = null;
   if (globe) {
     globe.polygonCapColor(() => 'rgba(30, 60, 120, 0.4)');
-    globe.polygonAltitude(() => 0.008);
   }
 }
 
@@ -1748,10 +1814,35 @@ searchInput.addEventListener('input', () => {
     ).join('');
   }
   searchResults.classList.add('show');
+  searchIdx = -1;
 });
 
+let searchIdx = -1;
+
+function updateSearchActive() {
+  const items = searchResults.querySelectorAll('.sr-item[onclick]');
+  items.forEach((el, i) => el.classList.toggle('active', i === searchIdx));
+  if (searchIdx >= 0 && items[searchIdx]) {
+    items[searchIdx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
 searchInput.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+  const items = searchResults.querySelectorAll('.sr-item[onclick]');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchIdx = items.length ? Math.min(searchIdx + 1, items.length - 1) : -1;
+    updateSearchActive();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchIdx = Math.max(searchIdx - 1, 0);
+    updateSearchActive();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchIdx >= 0 && items[searchIdx]) {
+      items[searchIdx].click();
+    }
+  } else if (e.key === 'Escape') {
     searchResults.classList.remove('show');
     searchInput.blur();
   }
