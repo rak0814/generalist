@@ -769,6 +769,7 @@ let globe = null;
 let currentView = '3d';
 let geoData = null;
 let selectedCountry = null;
+
 let tappedCountry = null;
 const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -912,9 +913,9 @@ function getKoName(name) {
   return KO_NAMES[name] || name;
 }
 const MODELS = {
-  'gemini-3.1-flash-lite-preview': { name: 'gemini-3.1-flash-lite', rpm: 15, rpd: 500, maxTokens: 65536 },
-  'gemini-2.5-flash': { name: 'gemini-2.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
-  'gemini-3-flash-preview': { name: 'gemini-3-flash', rpm: 5, rpd: 20, maxTokens: 65536 }
+        'gemini-2.5-flash': { name: 'gemini-2.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
+        'gemini-3-flash-preview': { name: 'gemini-3-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
+        'gemini-3.5-flash': { name: 'gemini-3.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 }
 };
 let AI_MODEL = 'gemini-2.5-flash';
 
