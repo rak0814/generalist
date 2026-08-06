@@ -917,7 +917,7 @@ const MODELS = {
     'gemini-3.5-flash': { name: 'gemini-3.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
     'gemini-3.6-flash': { name: 'gemini-3.6-flash', rpm: 5, rpd: 20, maxTokens: 65536 }
 };
-let AI_MODEL = 'gemini-2.5-flash';
+let AI_MODEL;
 
 // ══════════════════════════════════════════════════════════════
 // AI 국가 정보 조회 + 캐싱
@@ -1879,6 +1879,7 @@ window.addEventListener('DOMContentLoaded', () => {
     opt.textContent = cfg.name;
     modelSelect.appendChild(opt);
   }
+  AI_MODEL = modelSelect.value;
   const savedModel = localStorage.getItem('wtm_model');
   if (savedModel && MODELS[savedModel]) { AI_MODEL = savedModel; modelSelect.value = savedModel; }
 
