@@ -1,1 +1,344 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>환율 계산기</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      background: #fff;
+      padding: 14px 20px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .top-bar h1 { font-size: 17px; font-weight: 700; color: #111; }
+
+    .converter {
+      padding: 20px;
+    }
+
+    .currency-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .currency-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .currency-select {
+      padding: 10px 12px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      background: #fafafa;
+      outline: none;
+      cursor: pointer;
+      min-width: 110px;
+    }
+
+    .currency-select:focus { border-color: #6366f1; }
+
+    .currency-input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: 700;
+      text-align: right;
+      outline: none;
+      background: #fafafa;
+    }
+
+    .currency-input:focus { border-color: #6366f1; background: #fff; }
+
+    .currency-label {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 8px;
+    }
+
+    .swap-btn {
+      display: flex;
+      justify-content: center;
+      margin: -8px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    .swap-btn button {
+      width: 44px;
+      height: 44px;
+      border: 2px solid #eee;
+      border-radius: 50%;
+      background: #fff;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.3s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    }
+
+    .swap-btn button:hover { transform: rotate(180deg); }
+
+    .rate-info {
+      background: #fff;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      margin-bottom: 16px;
+    }
+
+    .rate-info-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+      margin-bottom: 12px;
+    }
+
+    .rate-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f5f5f5;
+      font-size: 14px;
+    }
+
+    .rate-row:last-child { border-bottom: none; }
+
+    .rate-row .label { color: #888; }
+    .rate-row .value { font-weight: 600; color: #111; }
+
+    .popular-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .popular-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .popular-btn {
+      padding: 10px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .popular-btn:hover { border-color: #6366f1; color: #6366f1; }
+
+    .updated-time {
+      text-align: center;
+      font-size: 11px;
+      color: #ccc;
+      margin-top: 16px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>&#128178; 환율 계산기</h1>
+</div>
+
+<div class="converter">
+  <div id="loadingState" class="loading">환율 정보를 불러오는 중...</div>
+
+  <div id="converterUI" style="display:none;">
+    <div class="currency-card">
+      <p class="currency-label">보내는 통화</p>
+      <div class="currency-row">
+        <select class="currency-select" id="fromCurrency" onchange="convert()"></select>
+        <input type="number" class="currency-input" id="fromAmount" value="1" oninput="convert()">
+      </div>
+    </div>
+
+    <div class="swap-btn">
+      <button onclick="swapCurrency()">&#8645;</button>
+    </div>
+
+    <div class="currency-card">
+      <p class="currency-label">받는 통화</p>
+      <div class="currency-row">
+        <select class="currency-select" id="toCurrency" onchange="convert()"></select>
+        <input type="number" class="currency-input" id="toAmount" readonly style="background:#f0f0f0;">
+      </div>
+    </div>
+
+    <div class="rate-info">
+      <p class="rate-info-title">환율 정보</p>
+      <div class="rate-row">
+        <span class="label" id="rateLabel1">1 USD</span>
+        <span class="value" id="rateValue1">-</span>
+      </div>
+      <div class="rate-row">
+        <span class="label" id="rateLabel2">1 KRW</span>
+        <span class="value" id="rateValue2">-</span>
+      </div>
+    </div>
+
+    <p class="popular-title">빠른 선택</p>
+    <div class="popular-grid">
+      <button class="popular-btn" onclick="quickSelect('USD','KRW')">USD &#8594; KRW</button>
+      <button class="popular-btn" onclick="quickSelect('KRW','USD')">KRW &#8594; USD</button>
+      <button class="popular-btn" onclick="quickSelect('KRW','JPY')">KRW &#8594; JPY</button>
+      <button class="popular-btn" onclick="quickSelect('KRW','EUR')">KRW &#8594; EUR</button>
+      <button class="popular-btn" onclick="quickSelect('KRW','CNY')">KRW &#8594; CNY</button>
+      <button class="popular-btn" onclick="quickSelect('KRW','GBP')">KRW &#8594; GBP</button>
+    </div>
+
+    <p class="updated-time" id="updatedTime"></p>
+  </div>
+</div>
+
+<script>
+  const CURRENCIES = {
+    KRW: '🇰🇷 KRW (원)',
+    USD: '🇺🇸 USD (달러)',
+    JPY: '🇯🇵 JPY (엔)',
+    EUR: '🇪🇺 EUR (유로)',
+    GBP: '🇬🇧 GBP (파운드)',
+    CNY: '🇨🇳 CNY (위안)',
+    AUD: '🇦🇺 AUD (호주달러)',
+    CAD: '🇨🇦 CAD (캐나다달러)',
+    CHF: '🇨🇭 CHF (프랑)',
+    HKD: '🇭🇰 HKD (홍콩달러)',
+    SGD: '🇸🇬 SGD (싱가포르달러)',
+    THB: '🇹🇭 THB (바트)',
+    TWD: '🇹🇼 TWD (대만달러)',
+    VND: '🇻🇳 VND (동)',
+    PHP: '🇵🇭 PHP (페소)',
+    MYR: '🇲🇾 MYR (링깃)',
+    INR: '🇮🇳 INR (루피)'
+  };
+
+  let rates = {};
+
+  async function loadRates() {
+    try {
+      const res = await fetch('https://api.exchangerate-data.com/v1/latest?base=USD');
+
+      if (!res.ok) {
+        const res2 = await fetch('https://open.er-api.com/v6/latest/USD');
+        const data = await res2.json();
+        rates = data.rates;
+      } else {
+        const data = await res.json();
+        rates = data.rates;
+      }
+
+      initUI();
+    } catch (err) {
+      try {
+        const res = await fetch('https://open.er-api.com/v6/latest/USD');
+        const data = await res.json();
+        rates = data.rates;
+        initUI();
+      } catch (err2) {
+        document.getElementById('loadingState').textContent = '환율 정보를 불러올 수 없습니다.';
+      }
+    }
+  }
+
+  function initUI() {
+    const fromSel = document.getElementById('fromCurrency');
+    const toSel = document.getElementById('toCurrency');
+
+    Object.keys(CURRENCIES).forEach(code => {
+      fromSel.add(new Option(CURRENCIES[code], code));
+      toSel.add(new Option(CURRENCIES[code], code));
+    });
+
+    fromSel.value = 'KRW';
+    toSel.value = 'USD';
+
+    document.getElementById('loadingState').style.display = 'none';
+    document.getElementById('converterUI').style.display = 'block';
+
+    const now = new Date();
+    document.getElementById('updatedTime').textContent =
+      '업데이트: ' + now.getFullYear() + '.' + (now.getMonth()+1) + '.' + now.getDate() + ' ' + now.getHours() + ':' + String(now.getMinutes()).padStart(2, '0');
+
+    convert();
+  }
+
+  function convert() {
+    const from = document.getElementById('fromCurrency').value;
+    const to = document.getElementById('toCurrency').value;
+    const amount = parseFloat(document.getElementById('fromAmount').value) || 0;
+
+    if (!rates[from] || !rates[to]) return;
+
+    const result = (amount / rates[from]) * rates[to];
+    document.getElementById('toAmount').value = result < 1 ? result.toFixed(6) : result.toFixed(2);
+
+    const rate1 = rates[to] / rates[from];
+    const rate2 = rates[from] / rates[to];
+
+    document.getElementById('rateLabel1').textContent = '1 ' + from;
+    document.getElementById('rateValue1').textContent = (rate1 < 1 ? rate1.toFixed(6) : rate1.toFixed(2)) + ' ' + to;
+    document.getElementById('rateLabel2').textContent = '1 ' + to;
+    document.getElementById('rateValue2').textContent = (rate2 < 1 ? rate2.toFixed(6) : rate2.toFixed(2)) + ' ' + from;
+  }
+
+  function swapCurrency() {
+    const fromSel = document.getElementById('fromCurrency');
+    const toSel = document.getElementById('toCurrency');
+    const temp = fromSel.value;
+    fromSel.value = toSel.value;
+    toSel.value = temp;
+    convert();
+  }
+
+  function quickSelect(from, to) {
+    document.getElementById('fromCurrency').value = from;
+    document.getElementById('toCurrency').value = to;
+    document.getElementById('fromAmount').value = 1;
+    convert();
+  }
+
+  loadRates();
+</script>
+
+</body>
+</html>
