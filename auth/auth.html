@@ -253,6 +253,47 @@
 
     .hidden { display: none !important; }
 
+    /* 비밀번호 변경 */
+    .pw-change-section {
+      border-top: 1px solid #eee;
+      padding-top: 20px;
+      margin-top: 20px;
+    }
+
+    .pw-change-section label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .pw-change-section .form-group {
+      margin-bottom: 12px;
+    }
+
+    .pw-change-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      background: #6366f1;
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .pw-change-btn:hover { opacity: 0.9; }
+    .pw-change-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .pw-msg {
+      font-size: 12px;
+      margin-top: 8px;
+      display: none;
+    }
+
     /* 회원탈퇴 */
     .danger-section {
       border-top: 1px solid #fee2e2;
@@ -405,6 +446,23 @@
         <button onclick="updateNickname()">변경</button>
       </div>
       <p class="profile-msg" id="profileMsg"></p>
+    </div>
+
+    <div class="pw-change-section">
+      <div class="form-group">
+        <label>현재 비밀번호</label>
+        <input type="password" id="currentPw" placeholder="현재 비밀번호">
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호</label>
+        <input type="password" id="newPw" placeholder="6자 이상 입력하세요" minlength="6">
+      </div>
+      <div class="form-group">
+        <label>새 비밀번호 확인</label>
+        <input type="password" id="confirmNewPw" placeholder="새 비밀번호를 다시 입력하세요">
+      </div>
+      <button class="pw-change-btn" onclick="changePassword()">비밀번호 변경</button>
+      <p class="pw-msg" id="pwMsg"></p>
     </div>
 
     <div class="danger-section">
@@ -598,6 +656,72 @@
     notifyParent(null);
   }
 
+  // ── 비밀번호 변경 ──
+  async function changePassword() {
+    if (!sb) return;
+
+    const currentPw = document.getElementById('currentPw').value;
+    const newPw = document.getElementById('newPw').value;
+    const confirmNewPw = document.getElementById('confirmNewPw').value;
+    const msg = document.getElementById('pwMsg');
+
+    if (!currentPw || !newPw || !confirmNewPw) {
+      showPwMsg('모든 항목을 입력하세요.', '#dc2626');
+      return;
+    }
+
+    if (newPw.length < 6) {
+      showPwMsg('새 비밀번호는 6자 이상이어야 합니다.', '#dc2626');
+      return;
+    }
+
+    if (newPw !== confirmNewPw) {
+      showPwMsg('새 비밀번호가 일치하지 않습니다.', '#dc2626');
+      return;
+    }
+
+    const btn = document.querySelector('.pw-change-btn');
+    btn.disabled = true;
+
+    try {
+      // 현재 비밀번호 확인 (별도 클라이언트로 검증하여 세션 영향 방지)
+      const { data: { session } } = await sb.auth.getSession();
+      const email = session?.user?.email;
+
+      const tempClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false }
+      });
+      const { error: signInError } = await tempClient.auth.signInWithPassword({ email, password: currentPw });
+      if (signInError) {
+        showPwMsg('현재 비밀번호가 올바르지 않습니다.', '#dc2626');
+        btn.disabled = false;
+        return;
+      }
+
+      // 새 비밀번호로 변경
+      const { error } = await sb.auth.updateUser({ password: newPw });
+      if (error) {
+        showPwMsg('변경 실패: ' + error.message, '#dc2626');
+      } else {
+        showPwMsg('비밀번호가 변경되었습니다.', '#059669');
+        document.getElementById('currentPw').value = '';
+        document.getElementById('newPw').value = '';
+        document.getElementById('confirmNewPw').value = '';
+      }
+    } catch (err) {
+      showPwMsg('오류가 발생했습니다: ' + err.message, '#dc2626');
+    }
+
+    btn.disabled = false;
+  }
+
+  function showPwMsg(text, color) {
+    const msg = document.getElementById('pwMsg');
+    msg.textContent = text;
+    msg.style.color = color;
+    msg.style.display = 'block';
+  }
+
   // ── 회원탈퇴 ──
   function showDeleteModal() {
     document.getElementById('deletePassword').value = '';
@@ -623,12 +747,15 @@
     btn.textContent = '처리 중...';
 
     try {
-      // 비밀번호 재확인 (현재 세션의 이메일로 로그인 시도)
+      // 비밀번호 재확인 (별도 클라이언트로 검증하여 세션 영향 방지)
       const { data: { session } } = await sb.auth.getSession();
       const email = session?.user?.email;
       if (!email) throw new Error('세션 정보를 찾을 수 없습니다.');
 
-      const { error: signInError } = await sb.auth.signInWithPassword({ email, password });
+      const tempClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: { persistSession: false }
+      });
+      const { error: signInError } = await tempClient.auth.signInWithPassword({ email, password });
       if (signInError) {
         showDeleteMessage('비밀번호가 올바르지 않습니다.', 'error');
         btn.disabled = false;
