@@ -28,11 +28,7 @@
       z-index: 10;
     }
 
-    .top-bar h1 {
-      font-size: 17px;
-      font-weight: 700;
-      color: #111;
-    }
+    .top-bar h1 { font-size: 17px; font-weight: 700; color: #111; }
 
     .top-bar-btn {
       padding: 8px 14px;
@@ -45,68 +41,46 @@
     }
 
     .top-bar-btn:hover { opacity: 0.85; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
+    .btn-back { background: #f0f0f0; color: #333; }
 
-    .btn-primary {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #fff;
+    .top-bar-right { display: flex; gap: 8px; align-items: center; }
+
+    /* ── Search Bar ── */
+    .search-bar {
+      padding: 12px 16px 4px;
     }
 
-    .btn-back {
-      background: #f0f0f0;
-      color: #333;
-    }
-
-    .top-bar-right {
+    .search-input-wrap {
       display: flex;
-      gap: 8px;
-      align-items: center;
-    }
-
-    .user-badge {
-      font-size: 12px;
-      color: #6366f1;
-      font-weight: 600;
-      background: #eef2ff;
-      padding: 4px 10px;
-      border-radius: 20px;
-    }
-
-    /* ── Login Prompt ── */
-    .login-prompt {
-      text-align: center;
-      padding: 80px 20px;
-    }
-
-    .login-prompt .icon { font-size: 48px; margin-bottom: 16px; }
-
-    .login-prompt h2 {
-      font-size: 18px;
-      color: #333;
-      margin-bottom: 8px;
-    }
-
-    .login-prompt p {
-      font-size: 14px;
-      color: #888;
-      margin-bottom: 24px;
-    }
-
-    .login-prompt-btn {
-      display: inline-block;
-      padding: 12px 32px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #fff;
-      border: none;
+      background: #fff;
       border-radius: 10px;
-      font-size: 14px;
-      font-weight: 600;
-      cursor: pointer;
+      border: 1.5px solid #e0e0e0;
+      overflow: hidden;
     }
+
+    .search-input-wrap input {
+      flex: 1;
+      padding: 10px 14px;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      background: none;
+    }
+
+    .search-input-wrap button {
+      padding: 10px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 16px;
+      color: #888;
+    }
+
+    .search-input-wrap button:hover { color: #6366f1; }
 
     /* ── Post List ── */
-    .post-list {
-      padding: 12px 16px;
-    }
+    .post-list { padding: 12px 16px; }
 
     .post-item {
       background: #fff;
@@ -118,9 +92,7 @@
       box-shadow: 0 1px 4px rgba(0,0,0,0.04);
     }
 
-    .post-item:hover {
-      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    }
+    .post-item:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
 
     .post-item-title {
       font-size: 15px;
@@ -140,9 +112,12 @@
       color: #999;
     }
 
-    .post-item-author {
-      font-weight: 500;
-      color: #666;
+    .post-item-author { font-weight: 500; color: #666; }
+
+    .post-item-comment {
+      font-size: 11px;
+      color: #6366f1;
+      font-weight: 600;
     }
 
     .empty-state {
@@ -154,14 +129,37 @@
     .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
     .empty-state p { font-size: 14px; }
 
-    /* ── Post Form ── */
-    .post-form {
-      padding: 20px;
+    /* ── Pagination ── */
+    .pagination {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 6px;
+      padding: 16px;
     }
 
-    .form-group {
-      margin-bottom: 16px;
+    .page-btn {
+      min-width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 8px;
+      background: #fff;
+      color: #555;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
     }
+
+    .page-btn:hover { background: #eef2ff; color: #6366f1; }
+    .page-btn.active { background: #6366f1; color: #fff; }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Post Form ── */
+    .post-form { padding: 20px; }
+
+    .form-group { margin-bottom: 16px; }
 
     .form-group label {
       display: block;
@@ -185,9 +183,7 @@
     }
 
     .form-group input:focus,
-    .form-group textarea:focus {
-      border-color: #6366f1;
-    }
+    .form-group textarea:focus { border-color: #6366f1; }
 
     .form-group textarea {
       min-height: 200px;
@@ -195,10 +191,7 @@
       line-height: 1.6;
     }
 
-    .form-actions {
-      display: flex;
-      gap: 10px;
-    }
+    .form-actions { display: flex; gap: 10px; }
 
     .form-actions button {
       flex: 1;
@@ -212,21 +205,11 @@
     }
 
     .form-actions button:hover { opacity: 0.85; }
-
-    .btn-cancel {
-      background: #f0f0f0;
-      color: #333;
-    }
-
-    .btn-submit {
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      color: #fff;
-    }
+    .btn-cancel { background: #f0f0f0; color: #333; }
+    .btn-submit { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
 
     /* ── Post Detail ── */
-    .post-detail {
-      padding: 20px;
-    }
+    .post-detail { padding: 20px; }
 
     .detail-title {
       font-size: 20px;
@@ -247,10 +230,7 @@
       border-bottom: 1px solid #eee;
     }
 
-    .detail-author {
-      font-weight: 600;
-      color: #555;
-    }
+    .detail-author { font-weight: 600; color: #555; }
 
     .detail-content {
       font-size: 15px;
@@ -258,7 +238,7 @@
       color: #333;
       white-space: pre-wrap;
       word-break: break-word;
-      min-height: 120px;
+      min-height: 80px;
     }
 
     .detail-actions {
@@ -279,23 +259,104 @@
       transition: opacity 0.2s;
     }
 
-    .btn-edit {
-      background: #eef2ff;
-      color: #6366f1;
+    .btn-edit { background: #eef2ff; color: #6366f1; }
+    .btn-delete { background: #fef2f2; color: #dc2626; }
+
+    /* ── Comments ── */
+    .comments-section {
+      margin-top: 32px;
+      border-top: 1px solid #eee;
+      padding-top: 20px;
     }
 
-    .btn-delete {
-      background: #fef2f2;
-      color: #dc2626;
+    .comments-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 16px;
+    }
+
+    .comment-form {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .comment-form input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+
+    .comment-form input:focus { border-color: #6366f1; }
+
+    .comment-form button {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 10px;
+      background: #6366f1;
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .comment-item {
+      padding: 12px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .comment-item:last-child { border-bottom: none; }
+
+    .comment-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .comment-author {
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .comment-date {
+      font-size: 11px;
+      color: #bbb;
+    }
+
+    .comment-text {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.5;
+    }
+
+    .comment-delete {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 12px;
+      cursor: pointer;
+      margin-left: 8px;
+    }
+
+    .comment-delete:hover { color: #dc2626; }
+
+    .comment-login-msg {
+      font-size: 13px;
+      color: #999;
+      text-align: center;
+      padding: 12px;
     }
 
     /* ── Loading ── */
-    .loading {
-      text-align: center;
-      padding: 40px;
-      color: #aaa;
-      font-size: 14px;
-    }
+    .loading { text-align: center; padding: 40px; color: #aaa; font-size: 14px; }
 
     /* ── View management ── */
     .view { display: none; }
@@ -331,10 +392,7 @@
       margin-bottom: 20px;
     }
 
-    .modal-btns {
-      display: flex;
-      gap: 10px;
-    }
+    .modal-btns { display: flex; gap: 10px; }
 
     .modal-btns button {
       flex: 1;
@@ -357,13 +415,22 @@
   <div class="top-bar">
     <h1>&#128221; 게시판</h1>
     <div class="top-bar-right">
-      <button class="top-bar-btn btn-primary" id="writeBtn" onclick="showWrite()">글쓰기</button>
+      <button class="top-bar-btn btn-primary" onclick="showWrite()">글쓰기</button>
+    </div>
+  </div>
+
+  <div class="search-bar">
+    <div class="search-input-wrap">
+      <input type="text" id="searchInput" placeholder="제목 또는 내용 검색" onkeydown="if(event.key==='Enter')doSearch()">
+      <button onclick="doSearch()">&#128269;</button>
     </div>
   </div>
 
   <div id="postListContainer">
     <div class="loading">불러오는 중...</div>
   </div>
+
+  <div id="paginationContainer"></div>
 </div>
 
 <!-- ============ WRITE VIEW ============ -->
@@ -398,7 +465,7 @@
     <div style="width:60px;"></div>
   </div>
 
-  <div class="post-detail">
+  <div class="post-detail" id="postDetailArea">
     <h2 class="detail-title" id="detailTitle"></h2>
     <div class="detail-meta">
       <span class="detail-author" id="detailAuthor"></span>
@@ -408,6 +475,14 @@
     <div class="detail-actions" id="detailActions" style="display:none;">
       <button class="btn-edit" onclick="showEdit()">&#9998; 수정</button>
       <button class="btn-delete" onclick="confirmDelete()">&#128465; 삭제</button>
+    </div>
+
+    <!-- Comments -->
+    <div class="comments-section">
+      <p class="comments-title" id="commentsTitle">댓글 0</p>
+
+      <div id="commentFormArea"></div>
+      <div id="commentsList"></div>
     </div>
   </div>
 </div>
@@ -439,10 +514,10 @@
 <!-- ============ DELETE CONFIRM MODAL ============ -->
 <div class="modal-overlay hidden" id="deleteModal">
   <div class="modal-box">
-    <p>이 게시글을 삭제하시겠습니까?</p>
+    <p id="deleteModalMsg">이 게시글을 삭제하시겠습니까?</p>
     <div class="modal-btns">
       <button class="modal-cancel" onclick="closeDeleteModal()">취소</button>
-      <button class="modal-confirm" onclick="deletePost()">삭제</button>
+      <button class="modal-confirm" id="deleteModalBtn" onclick="deletePost()">삭제</button>
     </div>
   </div>
 </div>
@@ -453,7 +528,13 @@
   let currentPost = null;
   let posts = [];
 
-  // ── UI 함수 (Supabase 없이도 동작) ──
+  // Pagination
+  const PAGE_SIZE = 10;
+  let currentPage = 1;
+  let totalCount = 0;
+  let searchKeyword = '';
+
+  // ── UI 함수 ──
   function switchView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
@@ -490,6 +571,8 @@
     document.getElementById('detailActions').style.display = isAuthor ? 'flex' : 'none';
 
     switchView('viewDetail');
+    loadComments(post.id);
+    renderCommentForm();
   }
 
   function showEdit() {
@@ -504,12 +587,10 @@
     const d = new Date(dateStr);
     const now = new Date();
     const diff = now - d;
-
     if (diff < 60000) return '방금 전';
     if (diff < 3600000) return Math.floor(diff / 60000) + '분 전';
     if (diff < 86400000) return Math.floor(diff / 3600000) + '시간 전';
     if (diff < 604800000) return Math.floor(diff / 86400000) + '일 전';
-
     return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate();
   }
 
@@ -520,6 +601,8 @@
   }
 
   function confirmDelete() {
+    document.getElementById('deleteModalMsg').textContent = '이 게시글을 삭제하시겠습니까?';
+    document.getElementById('deleteModalBtn').onclick = deletePost;
     document.getElementById('deleteModal').classList.remove('hidden');
   }
 
@@ -527,29 +610,55 @@
     document.getElementById('deleteModal').classList.add('hidden');
   }
 
-  // ── Supabase 연동 함수 ──
+  // ── Search ──
+  function doSearch() {
+    searchKeyword = document.getElementById('searchInput').value.trim();
+    currentPage = 1;
+    loadPosts();
+  }
+
+  // ── Load posts with pagination & search ──
   async function loadPosts() {
     const container = document.getElementById('postListContainer');
+    const pagContainer = document.getElementById('paginationContainer');
     if (!sb) {
       container.innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>서버에 연결할 수 없습니다.</p></div>';
+      pagContainer.innerHTML = '';
       return;
     }
     container.innerHTML = '<div class="loading">불러오는 중...</div>';
 
-    const { data, error } = await sb
-      .from('posts')
-      .select('*')
-      .order('created_at', { ascending: false });
+    // Count total
+    let countQuery = sb.from('posts').select('*', { count: 'exact', head: true });
+    if (searchKeyword) {
+      countQuery = countQuery.or('title.ilike.%' + searchKeyword + '%,content.ilike.%' + searchKeyword + '%');
+    }
+    const { count } = await countQuery;
+    totalCount = count || 0;
+
+    // Fetch page
+    const from = (currentPage - 1) * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
+
+    let query = sb.from('posts').select('*').order('created_at', { ascending: false }).range(from, to);
+    if (searchKeyword) {
+      query = query.or('title.ilike.%' + searchKeyword + '%,content.ilike.%' + searchKeyword + '%');
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       container.innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>게시글을 불러올 수 없습니다.</p></div>';
+      pagContainer.innerHTML = '';
       return;
     }
 
     posts = data || [];
 
     if (posts.length === 0) {
-      container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>아직 게시글이 없습니다.<br>첫 번째 글을 작성해보세요!</p></div>';
+      const msg = searchKeyword ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.<br>첫 번째 글을 작성해보세요!';
+      container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>' + msg + '</p></div>';
+      pagContainer.innerHTML = '';
       return;
     }
 
@@ -564,8 +673,42 @@
           </div>
         </div>`;
     }).join('') + '</div>';
+
+    renderPagination();
   }
 
+  // ── Pagination UI ──
+  function renderPagination() {
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    const container = document.getElementById('paginationContainer');
+
+    if (totalPages <= 1) { container.innerHTML = ''; return; }
+
+    let html = '<div class="pagination">';
+    html += '<button class="page-btn" onclick="goToPage(' + (currentPage - 1) + ')" ' + (currentPage === 1 ? 'disabled' : '') + '>&laquo;</button>';
+
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      html += '<button class="page-btn' + (i === currentPage ? ' active' : '') + '" onclick="goToPage(' + i + ')">' + i + '</button>';
+    }
+
+    html += '<button class="page-btn" onclick="goToPage(' + (currentPage + 1) + ')" ' + (currentPage === totalPages ? 'disabled' : '') + '>&raquo;</button>';
+    html += '</div>';
+
+    container.innerHTML = html;
+  }
+
+  function goToPage(page) {
+    const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+    if (page < 1 || page > totalPages) return;
+    currentPage = page;
+    loadPosts();
+  }
+
+  // ── Create post ──
   async function submitPost() {
     if (!sb) return;
     const title = document.getElementById('writeTitle').value.trim();
@@ -577,8 +720,7 @@
     const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
 
     const { error } = await sb.from('posts').insert({
-      title,
-      content,
+      title, content,
       user_id: currentUser.id,
       user_email: currentUser.email,
       user_nickname: nickname
@@ -589,9 +731,13 @@
       return;
     }
 
+    currentPage = 1;
+    searchKeyword = '';
+    document.getElementById('searchInput').value = '';
     showList();
   }
 
+  // ── Update post ──
   async function updatePost() {
     if (!sb) return;
     const title = document.getElementById('editTitle').value.trim();
@@ -615,6 +761,7 @@
     showDetail(currentPost);
   }
 
+  // ── Delete post ──
   async function deletePost() {
     if (!sb) return;
     closeDeleteModal();
@@ -633,16 +780,128 @@
     showList();
   }
 
+  // ── Comments ──
+  function renderCommentForm() {
+    const area = document.getElementById('commentFormArea');
+    if (currentUser) {
+      area.innerHTML = `
+        <div class="comment-form">
+          <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
+          <button onclick="submitComment()">등록</button>
+        </div>`;
+    } else {
+      area.innerHTML = '<p class="comment-login-msg">댓글을 작성하려면 로그인하세요.</p>';
+    }
+  }
+
+  async function loadComments(postId) {
+    const container = document.getElementById('commentsList');
+    if (!sb) return;
+
+    const { data, error } = await sb
+      .from('comments')
+      .select('*')
+      .eq('post_id', postId)
+      .order('created_at', { ascending: true });
+
+    if (error) {
+      container.innerHTML = '';
+      return;
+    }
+
+    const comments = data || [];
+    document.getElementById('commentsTitle').textContent = '댓글 ' + comments.length;
+
+    if (comments.length === 0) {
+      container.innerHTML = '<p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">댓글이 없습니다.</p>';
+      return;
+    }
+
+    container.innerHTML = comments.map(c => {
+      const nickname = c.user_nickname || c.user_email.split('@')[0];
+      const isAuthor = currentUser && currentUser.id === c.user_id;
+      return `
+        <div class="comment-item">
+          <div class="comment-header">
+            <span class="comment-author">${escapeHtml(nickname)}</span>
+            <span>
+              <span class="comment-date">${formatDate(c.created_at)}</span>
+              ${isAuthor ? '<button class="comment-delete" onclick="editComment(\'' + c.id + '\',this)">수정</button><button class="comment-delete" onclick="deleteComment(\'' + c.id + '\')">삭제</button>' : ''}
+            </span>
+          </div>
+          <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
+        </div>`;
+    }).join('');
+  }
+
+  async function submitComment() {
+    if (!sb || !currentUser || !currentPost) return;
+    const input = document.getElementById('commentInput');
+    const content = input.value.trim();
+    if (!content) return;
+
+    const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
+
+    const { error } = await sb.from('comments').insert({
+      post_id: currentPost.id,
+      content,
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      user_nickname: nickname
+    });
+
+    if (error) {
+      alert('댓글 등록 실패: ' + error.message);
+      return;
+    }
+
+    input.value = '';
+    loadComments(currentPost.id);
+  }
+
+  function editComment(commentId, btn) {
+    const textEl = document.getElementById('comment-text-' + commentId);
+    const oldText = textEl.textContent;
+
+    textEl.innerHTML = `
+      <div class="comment-form" style="margin:0;">
+        <input type="text" id="edit-comment-${commentId}" value="${escapeHtml(oldText)}" onkeydown="if(event.key==='Enter')saveComment('${commentId}')">
+        <button onclick="saveComment('${commentId}')">저장</button>
+      </div>`;
+    document.getElementById('edit-comment-' + commentId).focus();
+  }
+
+  async function saveComment(commentId) {
+    if (!sb) return;
+    const input = document.getElementById('edit-comment-' + commentId);
+    const content = input.value.trim();
+    if (!content) return alert('댓글 내용을 입력하세요.');
+
+    const { error } = await sb.from('comments').update({ content }).eq('id', commentId);
+    if (error) { alert('수정 실패: ' + error.message); return; }
+    loadComments(currentPost.id);
+  }
+
+  async function deleteComment(commentId) {
+    if (!sb) return;
+    document.getElementById('deleteModalMsg').textContent = '이 댓글을 삭제하시겠습니까?';
+    document.getElementById('deleteModalBtn').onclick = async function() {
+      closeDeleteModal();
+      const { error } = await sb.from('comments').delete().eq('id', commentId);
+      if (error) { alert('삭제 실패: ' + error.message); return; }
+      loadComments(currentPost.id);
+    };
+    document.getElementById('deleteModal').classList.remove('hidden');
+  }
+
   // ── Supabase 초기화 ──
   async function init() {
     try {
       sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
       const { data: { session } } = await sb.auth.getSession();
-
       if (session?.user) {
         currentUser = session.user;
-        const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
       }
 
       loadPosts();
