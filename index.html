@@ -551,7 +551,7 @@
       }
     }
     if (e.data && e.data.type === 'go-to-auth') {
-      loadPage('auth.html', 'auth');
+      loadPage('auth/auth.html', 'auth');
     }
   });
 
@@ -563,7 +563,7 @@
       btn.onclick = handleLogout;
     } else {
       btn.textContent = '로그인';
-      btn.onclick = function() { loadPage('auth.html', 'auth'); };
+      btn.onclick = function() { loadPage('auth/auth.html', 'auth'); };
     }
   }
 
