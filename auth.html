@@ -354,7 +354,7 @@
 
   function showMessage(text, type) {
     const el = document.getElementById('message');
-    el.textContent = text;
+    el.innerHTML = text.replace(/\n/g, '<br>');
     el.className = 'message ' + type;
     el.style.display = 'block';
   }
@@ -407,7 +407,7 @@
         if (error) {
           showMessage(error.message, 'error');
         } else {
-          showMessage('비밀번호 재설정 메일을 보냈습니다. 이메일을 확인하세요.', 'success');
+          showMessage('비밀번호 재설정 메일을 보냈습니다.\n이메일을 확인하세요.', 'success');
         }
       } else if (currentTab === 'signup') {
         const confirm = document.getElementById('confirmPassword').value;
