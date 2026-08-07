@@ -322,6 +322,41 @@
       justify-content: center;
     }
 
+    /* ── Admin Stats ── */
+    .admin-stats {
+      padding: 16px 24px;
+      background: #f8f8f8;
+      border-top: 1px solid #eee;
+      margin-top: auto;
+    }
+
+    .admin-stats-title {
+      font-size: 10px;
+      font-weight: 700;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+    }
+
+    .admin-stats-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+    }
+
+    .admin-stats-row .label {
+      font-size: 12px;
+      color: #888;
+    }
+
+    .admin-stats-row .value {
+      font-size: 13px;
+      font-weight: 700;
+      color: #333;
+    }
+
     /* ── Scrollbar ── */
     .home-page::-webkit-scrollbar { width: 4px; }
     .home-page::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
@@ -474,6 +509,22 @@
           <span class="mi-icon">&#128100;</span> 내정보
         </div>
       </div>
+
+      <div class="admin-stats hidden" id="adminStats">
+        <p class="admin-stats-title">Admin</p>
+        <div class="admin-stats-row">
+          <span class="label">오늘 접속자</span>
+          <span class="value" id="statToday">-</span>
+        </div>
+        <div class="admin-stats-row">
+          <span class="label">누적 접속자</span>
+          <span class="value" id="statTotal">-</span>
+        </div>
+        <div class="admin-stats-row">
+          <span class="label">총 회원수</span>
+          <span class="value" id="statUsers">-</span>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -484,6 +535,7 @@
   const pageFrame = document.getElementById('pageFrame');
   let currentNav = 'home';
   let sb = null;
+  const ADMIN_EMAIL = 'rak0418@naver.com';
 
   // ── Supabase 초기화 ──
   try {
@@ -495,10 +547,50 @@
         document.getElementById('menuEmail').textContent = session.user.email;
         setAuthBtn(true);
         document.getElementById('menuLogoutSection').style.display = 'block';
+        if (session.user.email === ADMIN_EMAIL) {
+          document.getElementById('adminStats').classList.remove('hidden');
+          loadAdminStats();
+        }
       }
     });
+    recordVisit();
   } catch (err) {
     console.error('Supabase 초기화 실패:', err);
+  }
+
+  // ── 접속 기록 ──
+  async function recordVisit() {
+    if (!sb) return;
+    try {
+      await sb.from('visits').insert({ visited_at: new Date().toISOString() });
+    } catch {}
+  }
+
+  // ── 관리자 통계 ──
+  async function loadAdminStats() {
+    if (!sb) return;
+    try {
+      // 오늘 접속자수
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const { count: todayCount } = await sb
+        .from('visits')
+        .select('*', { count: 'exact', head: true })
+        .gte('visited_at', today.toISOString());
+      document.getElementById('statToday').textContent = (todayCount || 0).toLocaleString();
+
+      // 누적 접속자수
+      const { count: totalCount } = await sb
+        .from('visits')
+        .select('*', { count: 'exact', head: true });
+      document.getElementById('statTotal').textContent = (totalCount || 0).toLocaleString();
+
+      // 총 회원수
+      const { count: userCount } = await sb
+        .from('profiles')
+        .select('*', { count: 'exact', head: true });
+      document.getElementById('statUsers').textContent = (userCount || 0).toLocaleString();
+    } catch {}
   }
 
   // ── Load sub-page in iframe ──
