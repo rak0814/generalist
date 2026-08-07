@@ -1,0 +1,1891 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>World Travel Map</title>
+  <script src="https://unpkg.com/globe.gl@2.45.3"></script>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="https://unpkg.com/topojson-client@3"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700;900&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: #0a0e1a;
+      color: #e2e8f0;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* ── 레이아웃 ── */
+    .app { display: flex; flex-direction: column; height: 100vh; }
+
+    /* ── 헤더 ── */
+    .header {
+      height: 56px;
+      background: rgba(15, 20, 35, 0.95);
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      gap: 16px;
+      flex-shrink: 0;
+      backdrop-filter: blur(20px);
+      z-index: 100;
+    }
+    .logo {
+      font-size: 16px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    .logo span { font-size: 20px; }
+
+    /* 검색 */
+    .search-wrap {
+      flex: 1;
+      max-width: 480px;
+      position: relative;
+    }
+    .search-input {
+      width: 100%;
+      padding: 10px 16px 10px 40px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      color: #fff;
+      font-size: 13px;
+      font-family: 'Noto Sans KR', sans-serif;
+      outline: none;
+      transition: all 0.2s;
+    }
+    .search-input::placeholder { color: rgba(255,255,255,0.3); }
+    .search-input:focus {
+      background: rgba(255,255,255,0.1);
+      border-color: rgba(99,102,241,0.5);
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      color: rgba(255,255,255,0.3);
+    }
+
+    /* 검색 결과 드롭다운 */
+    .search-results {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: #1e2235;
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 12px;
+      max-height: 320px;
+      overflow-y: auto;
+      z-index: 200;
+      display: none;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+    }
+    .search-results.show { display: block; }
+    .sr-item {
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      transition: background 0.15s;
+      font-size: 13px;
+    }
+    .sr-item:hover, .sr-item.active { background: rgba(255,255,255,0.06); }
+    .sr-item:first-child { border-radius: 12px 12px 0 0; }
+    .sr-item:last-child { border-radius: 0 0 12px 12px; }
+    .sr-flag { font-size: 20px; }
+    .sr-name { font-weight: 500; }
+    .sr-name-en { font-size: 11px; color: rgba(255,255,255,0.4); margin-left: 6px; }
+
+    /* 뷰 토글 */
+    .view-toggle {
+      display: flex;
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 2px;
+      flex-shrink: 0;
+    }
+    .view-btn {
+      padding: 7px 16px;
+      border: none;
+      background: transparent;
+      color: rgba(255,255,255,0.5);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .view-btn.active {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+    }
+
+    /* ── 메인 영역 ── */
+    .main {
+      flex: 1;
+      display: flex;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* 맵 컨테이너 */
+    .map-container {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+    }
+    #globe3d, #map2d {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    #map2d { display: none; }
+    #map2d svg { width: 100%; height: 100%; }
+
+    /* ── 국가 정보 패널 ── */
+    .info-panel {
+      width: 400px;
+      min-width: 400px;
+      background: rgba(15, 20, 35, 0.97);
+      border-left: 1px solid rgba(255,255,255,0.06);
+      overflow-y: auto;
+      transform: translateX(100%);
+      transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      backdrop-filter: blur(20px);
+      z-index: 50;
+    }
+    .info-panel.open { transform: translateX(0); }
+
+    .info-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.6);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+    .info-close:hover { background: rgba(255,255,255,0.12); }
+
+    /* 패널 헤더 */
+    .info-hero {
+      position: relative;
+      padding: 32px 24px 24px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(59,130,246,0.1));
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .info-flag { font-size: 48px; margin-bottom: 12px; }
+    .info-country { font-size: 28px; font-weight: 900; color: #fff; letter-spacing: -0.5px; }
+    .info-country-en { font-size: 14px; color: rgba(255,255,255,0.4); font-weight: 400; margin-top: 2px; }
+    .info-continent {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 10px;
+      padding: 4px 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 20px;
+      font-size: 11px;
+      color: rgba(255,255,255,0.6);
+    }
+
+    /* 인사말 */
+    .hello-card {
+      margin: 20px 24px 0;
+      padding: 16px 20px;
+      background: linear-gradient(135deg, rgba(99,102,241,0.12), rgba(168,85,247,0.08));
+      border: 1px solid rgba(99,102,241,0.2);
+      border-radius: 14px;
+    }
+    .hello-label { font-size: 11px; color: rgba(255,255,255,0.4); margin-bottom: 6px; }
+    .hello-text { font-size: 22px; font-weight: 700; color: #a5b4fc; }
+    .hello-pron { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 4px; }
+
+    /* 정보 섹션 */
+    .info-section {
+      padding: 20px 24px;
+    }
+    .info-section + .info-section {
+      border-top: 1px solid rgba(255,255,255,0.04);
+    }
+    .info-section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.35);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 12px;
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .info-item {
+      padding: 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .info-item-label {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      white-space: nowrap;
+    }
+    .info-item-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+    }
+    .info-item.full { grid-column: 1 / -1; }
+
+    /* 여행 시기 */
+    .season-bar {
+      display: flex;
+      gap: 2px;
+      margin-top: 8px;
+    }
+    .season-month {
+      flex: 1;
+      text-align: center;
+      padding: 6px 0;
+      border-radius: 4px;
+      font-size: 9px;
+      font-weight: 600;
+    }
+    .season-month.good { background: rgba(34,197,94,0.2); color: #4ade80; }
+    .season-month.ok { background: rgba(250,204,21,0.15); color: #facc15; }
+    .season-month.bad { background: rgba(239,68,68,0.15); color: #f87171; }
+
+    /* 랜드마크 */
+    .landmark-list { display: flex; flex-direction: column; gap: 8px; }
+    .landmark-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .landmark-icon { font-size: 22px; flex-shrink: 0; }
+    .landmark-name { font-size: 13px; font-weight: 500; }
+    .landmark-name-en { font-size: 11px; color: rgba(255,255,255,0.35); }
+
+    /* 음식 */
+    .food-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .food-tag {
+      padding: 6px 12px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* 대표도시 */
+    .city-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .city-num {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: rgba(99,102,241,0.15); color: #a5b4fc;
+      font-size: 11px; font-weight: 700;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .city-name { font-size: 13px; font-weight: 600; }
+    .city-name-en { font-size: 10px; color: rgba(255,255,255,0.35); }
+    .city-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+    /* 기본회화 */
+    .phrase-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .phrase-ko { font-size: 11px; color: rgba(255,255,255,0.4); flex-shrink: 0; margin-right: 12px; }
+    .phrase-right { text-align: right; }
+    .phrase-local { font-size: 13px; font-weight: 600; color: #a5b4fc; }
+    .phrase-pron { font-size: 11px; color: rgba(255,255,255,0.4); }
+
+    /* 문화/매너 */
+    .culture-item {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .culture-title { font-size: 12px; font-weight: 600; color: #fff; margin-bottom: 2px; }
+    .culture-desc { font-size: 11px; color: rgba(255,255,255,0.5); line-height: 1.5; }
+
+    /* 교통 */
+    .transport-item {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+    }
+    .transport-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .transport-name { font-size: 12px; font-weight: 600; }
+    .transport-desc { font-size: 11px; color: rgba(255,255,255,0.45); margin-top: 1px; }
+
+    /* 추천일정 */
+    .itinerary-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.05);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .itinerary-title {
+      padding: 10px 14px;
+      background: rgba(99,102,241,0.08);
+      font-size: 13px; font-weight: 700; color: #a5b4fc;
+      cursor: pointer; display: flex; justify-content: space-between; align-items: center;
+    }
+    .itinerary-body { padding: 10px 14px; }
+    .itinerary-day {
+      padding: 6px 0;
+      font-size: 11px; color: rgba(255,255,255,0.6);
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      line-height: 1.5;
+    }
+    .itinerary-day:last-child { border-bottom: none; }
+    .itinerary-day strong { color: #a5b4fc; font-weight: 600; }
+
+    /* 긴급연락처 */
+    .emergency-card {
+      padding: 14px;
+      background: rgba(239,68,68,0.06);
+      border: 1px solid rgba(239,68,68,0.15);
+      border-radius: 10px;
+    }
+    .emergency-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 5px 0; font-size: 12px;
+    }
+    .emergency-row + .emergency-row { border-top: 1px solid rgba(255,255,255,0.04); }
+    .emergency-label { color: rgba(255,255,255,0.4); white-space: nowrap; flex-shrink: 0; margin-right: 10px; }
+    .emergency-value { font-weight: 600; color: #fff; text-align: right; }
+    .emergency-warn {
+      margin-top: 10px; padding: 8px 12px;
+      background: rgba(239,68,68,0.1); border-radius: 8px;
+      font-size: 11px; color: #f87171; line-height: 1.5;
+    }
+
+    /* VGT 버튼 */
+    .vgt-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-top: 8px;
+    }
+    .vgt-btn:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    /* 툴팁 */
+    .map-tooltip {
+      position: fixed;
+      padding: 8px 14px;
+      background: rgba(15,20,35,0.95);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #fff;
+      pointer-events: none;
+      z-index: 300;
+      display: none;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .map-tooltip .tt-flag { font-size: 16px; margin-right: 6px; }
+
+    /* globe.gl 내장 툴팁 */
+    @media (max-width: 768px) {
+      .float-tooltip-kap { max-width: none !important; width: max-content !important; }
+    }
+
+    /* 스크롤바 */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+    /* ── 모바일 ── */
+    @media (max-width: 768px) {
+      .header { flex-wrap: wrap; height: auto; padding: 8px 12px; gap: 8px; }
+      .logo { font-size: 13px; flex: 1; }
+      .search-wrap { max-width: none; width: 100%; flex-basis: 100%; order: 10; }
+      .search-input { font-size: 14px; padding: 10px 12px 10px 36px; }
+      .search-icon { left: 10px; }
+      .view-btn { padding: 6px 10px; font-size: 11px; }
+
+      .info-panel {
+        position: fixed;
+        top: 0; left: 0; right: 0; bottom: 0;
+        width: 100%; min-width: 100%;
+        transform: translateY(100%);
+        border-left: none;
+        z-index: 200;
+      }
+      .info-panel.open { transform: translateY(0); }
+
+      .info-hero { padding: 24px 16px 20px; }
+      .info-flag { font-size: 40px; }
+      .info-country { font-size: 24px; }
+      .info-section { padding: 16px; }
+      .info-grid { grid-template-columns: 1fr; }
+      .hello-card { margin: 16px 16px 0; }
+
+      .search-results { max-height: 260px; }
+      .info-close { width: 40px; height: 40px; font-size: 22px; top: 12px; right: 12px; }
+      .info-panel { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- 헤더 -->
+  <div class="header">
+    <div class="search-wrap">
+      <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke-width="2" stroke-linecap="round"/></svg>
+      <input type="text" class="search-input" id="searchInput" placeholder="국가명을 검색하세요... (예: 미국, Japan, France)" autocomplete="off">
+      <div class="search-results" id="searchResults"></div>
+    </div>
+
+    <select id="modelSelect" style="
+      padding:6px 10px; font-size:11px; font-family:'Noto Sans KR',sans-serif;
+      background:#1e2235; color:rgba(255,255,255,0.6);
+      border:1px solid rgba(255,255,255,0.1); border-radius:8px;
+      outline:none; cursor:pointer; flex-shrink:0;
+    " onchange="AI_MODEL=this.value; localStorage.setItem('wtm_model',this.value);">
+    </select>
+
+    <div class="view-toggle">
+      <button class="view-btn active" id="btn3d" onclick="switchView('3d')">🌐 3D</button>
+      <button class="view-btn" id="btn2d" onclick="switchView('2d')">🗺 2D</button>
+    </div>
+  </div>
+
+  <!-- 메인 -->
+  <div class="main">
+    <div class="map-container">
+      <div id="globe3d"></div>
+      <div id="map2d"></div>
+    </div>
+
+    <!-- 국가 정보 패널 -->
+    <div class="info-panel" id="infoPanel">
+      <button class="info-close" onclick="closePanel()">&times;</button>
+      <div id="infoPanelContent"></div>
+    </div>
+  </div>
+</div>
+
+<!-- 툴팁 (PC hover용) -->
+<div class="map-tooltip" id="tooltip"></div>
+
+<!-- 모바일 말풍선 -->
+<div id="mobileBubble" style="
+  display:none;
+  position:fixed;
+  bottom:20px;
+  left:50%;
+  transform:translateX(-50%);
+  padding:10px 20px;
+  background:rgba(15,20,35,0.97);
+  border:1px solid rgba(99,102,241,0.4);
+  border-radius:40px;
+  z-index:150;
+  backdrop-filter:blur(20px);
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  animation: bubbleIn 0.3s ease;
+  display:none;
+  flex-direction:row;
+  align-items:center;
+  gap:10px;
+  white-space:nowrap;
+">
+  <button id="bubbleDetailBtn" onclick="openBubbleDetail()" style="
+    padding:7px 16px; background:#6366f1; color:#fff;
+    border:none; border-radius:20px; font-size:12px; font-weight:600;
+    font-family:'Noto Sans KR',sans-serif; cursor:pointer; flex-shrink:0;
+  "><span id="bubbleBtnText">상세보기</span></button>
+</div>
+<style>
+  @keyframes bubbleIn {
+    from { opacity:0; transform:translateX(-50%) translateY(10px); }
+    to { opacity:1; transform:translateX(-50%) translateY(0); }
+  }
+</style>
+
+<script>
+// ══════════════════════════════════════════════════════════════
+// 국가 데이터 (미국 샘플)
+// ══════════════════════════════════════════════════════════════
+const COUNTRY_DATA = {
+  'United States of America': {
+    nameKo: '미국',
+    nameEn: 'United States of America',
+    flag: '🇺🇸',
+    continent: '북아메리카',
+    continentIcon: '🌎',
+    continentShape: 'M12 2C8.5 2 5.5 4 4 7l-2 5 1 4 3 2 2-1 3 3 4-1 3 2 4-3 2 1 2-3-1-4-2-4c-1-3-4-6-8-6z',
+    capital: '워싱턴 D.C.',
+    majorCities: [
+      { name: '뉴욕', nameEn: 'New York', desc: '미국 최대 도시, 금융·문화 중심' },
+      { name: '로스앤젤레스', nameEn: 'Los Angeles', desc: '할리우드, 서부 최대 도시' },
+      { name: '시카고', nameEn: 'Chicago', desc: '건축·재즈의 도시' },
+      { name: '샌프란시스코', nameEn: 'San Francisco', desc: '금문교, IT 허브' },
+      { name: '라스베이거스', nameEn: 'Las Vegas', desc: '엔터테인먼트의 수도' },
+      { name: '호놀룰루', nameEn: 'Honolulu', desc: '하와이 휴양 도시' },
+    ],
+    landmarks: [
+      { icon: '🗽', name: '자유의 여신상', nameEn: 'Statue of Liberty' },
+      { icon: '🏜️', name: '그랜드 캐니언', nameEn: 'Grand Canyon' },
+      { icon: '🌉', name: '금문교', nameEn: 'Golden Gate Bridge' },
+      { icon: '🏙️', name: '타임스 스퀘어', nameEn: 'Times Square' },
+      { icon: '🗻', name: '요세미티 국립공원', nameEn: 'Yosemite National Park' },
+      { icon: '🎢', name: '디즈니월드', nameEn: 'Walt Disney World' },
+    ],
+    language: 'English (영어)',
+    phrases: [
+      { ko: '안녕하세요', local: 'Hello', pron: '헬로' },
+      { ko: '감사합니다', local: 'Thank you', pron: '땡큐' },
+      { ko: '실례합니다', local: 'Excuse me', pron: '익스큐즈 미' },
+      { ko: '얼마예요?', local: 'How much?', pron: '하우 머치?' },
+      { ko: '화장실 어디예요?', local: 'Where is the restroom?', pron: '웨어 이즈 더 레스트룸?' },
+      { ko: '도와주세요', local: 'Help me, please', pron: '헬프 미 플리즈' },
+    ],
+    seasons: [
+      'ok','ok','good','good','good','ok',
+      'bad','bad','good','good','ok','ok'
+    ],
+    bestTime: '4~5월, 9~10월 (봄/가을)',
+    avoidTime: '7~8월 (폭염·인파 집중, 허리케인 시즌)',
+    foods: [
+      { icon: '🍔', name: '햄버거' },
+      { icon: '🥩', name: '스테이크' },
+      { icon: '🌮', name: '타코' },
+      { icon: '🍕', name: '뉴욕 피자' },
+      { icon: '🥞', name: '팬케이크' },
+      { icon: '🦞', name: '랍스터' },
+      { icon: '🌭', name: '핫도그' },
+      { icon: '🍗', name: '프라이드치킨' },
+    ],
+    currency: {
+      name: 'USD (미국 달러)',
+      symbol: '$',
+      rate: '1만원 ≈ $7.2',
+      coffee: '약 $5~7 (₩7,000~10,000)',
+      meal: '약 $15~30 (₩21,000~42,000)',
+    },
+    timezone: '-14시간 (동부 기준)',
+    flight: {
+      direct: '인천 → 약 13~14시간',
+      transit: '경유 시 18~22시간',
+      airlines: '대한항공, 아시아나, 유나이티드, 델타 등',
+    },
+    visa: {
+      type: 'ESTA (전자여행허가)',
+      desc: '최대 90일 체류, 출발 72시간 전 신청 권장',
+      fee: '$21 (약 ₩29,000)',
+    },
+    plug: {
+      voltage: '120V / 60Hz',
+      type: 'A·B타입 (납작 2핀)',
+      note: '한국 기기 사용 시 변압기 필요',
+    },
+    culture: [
+      { title: '팁 문화', desc: '레스토랑 15~20%, 택시·호텔 $1~5 필수' },
+      { title: '줄 서기', desc: '어디서든 줄을 철저히 지킴, 새치기 금물' },
+      { title: '개인 공간', desc: '대화 시 팔 한 개 정도 거리 유지' },
+      { title: '음주', desc: '21세 미만 음주 불법, ID 검사 엄격' },
+      { title: '흡연', desc: '대부분 실내 금연, 지역별 규제 다름' },
+    ],
+    transport: [
+      { icon: '🚇', name: '지하철', desc: '뉴욕(MTA), LA(Metro) 등 대도시 운행' },
+      { icon: '🚗', name: '렌터카', desc: '대도시 외 지역은 렌터카 필수, 국제면허증 지참' },
+      { icon: '🚌', name: '그레이하운드', desc: '도시 간 장거리 버스, 저렴한 이동 수단' },
+      { icon: '🚄', name: '암트랙', desc: '미국 횡단 열차, 경치 좋은 노선 다수' },
+      { icon: '🚕', name: 'Uber/Lyft', desc: '택시 대신 앱 호출이 일반적' },
+    ],
+    itinerary: [
+      {
+        title: '뉴욕 5일',
+        days: [
+          'Day 1: 맨해튼 도착 → 타임스퀘어 → 브로드웨이 뮤지컬',
+          'Day 2: 자유의 여신상 → 엘리스 아일랜드 → 월스트리트',
+          'Day 3: 센트럴파크 → 메트로폴리탄 미술관 → 5번가 쇼핑',
+          'Day 4: 브루클린 브릿지 → 덤보 → 첼시 마켓',
+          'Day 5: 엠파이어 스테이트 빌딩 → 출발',
+        ]
+      },
+      {
+        title: '서부 7일',
+        days: [
+          'Day 1: LA 도착 → 산타모니카 해변',
+          'Day 2: 할리우드 → 그리피스 천문대',
+          'Day 3: LA → 라스베이거스 이동',
+          'Day 4: 그랜드 캐니언 당일투어',
+          'Day 5: 라스베이거스 자유시간',
+          'Day 6: 라스베이거스 → 샌프란시스코 이동',
+          'Day 7: 금문교 → 피셔맨스 워프 → 출발',
+        ]
+      }
+    ],
+    emergency: {
+      police: '911 (경찰·소방·응급 통합)',
+      embassy: '주미 대한민국 대사관: +1-202-939-5600',
+      embassyAddr: '2450 Massachusetts Ave NW, Washington, D.C.',
+      insurance: '의료비 매우 비쌈 — 여행자보험 필수 가입',
+    },
+  }
+};
+
+// 국가 한글 매핑 (검색용)
+const COUNTRY_NAMES = {
+  'United States of America': { ko: '미국', flag: '🇺🇸' },
+  'South Korea': { ko: '대한민국', flag: '🇰🇷' },
+  'Japan': { ko: '일본', flag: '🇯🇵' },
+  'China': { ko: '중국', flag: '🇨🇳' },
+  'France': { ko: '프랑스', flag: '🇫🇷' },
+  'Germany': { ko: '독일', flag: '🇩🇪' },
+  'United Kingdom': { ko: '영국', flag: '🇬🇧' },
+  'Italy': { ko: '이탈리아', flag: '🇮🇹' },
+  'Spain': { ko: '스페인', flag: '🇪🇸' },
+  'Turkey': { ko: '튀르키예', flag: '🇹🇷' },
+  'Thailand': { ko: '태국', flag: '🇹🇭' },
+  'Vietnam': { ko: '베트남', flag: '🇻🇳' },
+  'Australia': { ko: '호주', flag: '🇦🇺' },
+  'Canada': { ko: '캐나다', flag: '🇨🇦' },
+  'Brazil': { ko: '브라질', flag: '🇧🇷' },
+  'India': { ko: '인도', flag: '🇮🇳' },
+  'Russia': { ko: '러시아', flag: '🇷🇺' },
+  'Mexico': { ko: '멕시코', flag: '🇲🇽' },
+  'Egypt': { ko: '이집트', flag: '🇪🇬' },
+  'Switzerland': { ko: '스위스', flag: '🇨🇭' },
+  'Philippines': { ko: '필리핀', flag: '🇵🇭' },
+  'Indonesia': { ko: '인도네시아', flag: '🇮🇩' },
+  'Singapore': { ko: '싱가포르', flag: '🇸🇬' },
+  'Malaysia': { ko: '말레이시아', flag: '🇲🇾' },
+  'New Zealand': { ko: '뉴질랜드', flag: '🇳🇿' },
+  'Greece': { ko: '그리스', flag: '🇬🇷' },
+  'Portugal': { ko: '포르투갈', flag: '🇵🇹' },
+  'Netherlands': { ko: '네덜란드', flag: '🇳🇱' },
+  'Czech Republic': { ko: '체코', flag: '🇨🇿' },
+  'Czechia': { ko: '체코', flag: '🇨🇿' },
+  'Croatia': { ko: '크로아티아', flag: '🇭🇷' },
+  'Morocco': { ko: '모로코', flag: '🇲🇦' },
+  'South Africa': { ko: '남아프리카공화국', flag: '🇿🇦' },
+  'Argentina': { ko: '아르헨티나', flag: '🇦🇷' },
+  'Peru': { ko: '페루', flag: '🇵🇪' },
+  'Colombia': { ko: '콜롬비아', flag: '🇨🇴' },
+  'Norway': { ko: '노르웨이', flag: '🇳🇴' },
+  'Sweden': { ko: '스웨덴', flag: '🇸🇪' },
+  'Finland': { ko: '핀란드', flag: '🇫🇮' },
+  'Denmark': { ko: '덴마크', flag: '🇩🇰' },
+  'Iceland': { ko: '아이슬란드', flag: '🇮🇸' },
+  'Austria': { ko: '오스트리아', flag: '🇦🇹' },
+  'Poland': { ko: '폴란드', flag: '🇵🇱' },
+  'Hungary': { ko: '헝가리', flag: '🇭🇺' },
+  'Ireland': { ko: '아일랜드', flag: '🇮🇪' },
+  'Taiwan': { ko: '대만', flag: '🇹🇼' },
+  'Mongolia': { ko: '몽골', flag: '🇲🇳' },
+  'Cambodia': { ko: '캄보디아', flag: '🇰🇭' },
+  'Laos': { ko: '라오스', flag: '🇱🇦' },
+  'Myanmar': { ko: '미얀마', flag: '🇲🇲' },
+  'Nepal': { ko: '네팔', flag: '🇳🇵' },
+  'Sri Lanka': { ko: '스리랑카', flag: '🇱🇰' },
+  'Kenya': { ko: '케냐', flag: '🇰🇪' },
+  'Tanzania': { ko: '탄자니아', flag: '🇹🇿' },
+  'Israel': { ko: '이스라엘', flag: '🇮🇱' },
+  'Jordan': { ko: '요르단', flag: '🇯🇴' },
+  'Saudi Arabia': { ko: '사우디아라비아', flag: '🇸🇦' },
+  'Cuba': { ko: '쿠바', flag: '🇨🇺' },
+  'Chile': { ko: '칠레', flag: '🇨🇱' },
+  'Bolivia': { ko: '볼리비아', flag: '🇧🇴' },
+};
+
+// ══════════════════════════════════════════════════════════════
+// 글로벌 변수
+// ══════════════════════════════════════════════════════════════
+let globe = null;
+let currentView = '3d';
+let geoData = null;
+let selectedCountry = null;
+
+let tappedCountry = null;
+const isMobile = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+// GeoJSON 로드 후 채워지는 ISO 매핑 (NAME → iso2)
+const GEO_ISO = {};
+
+// 전체 국가 한글명 (GeoJSON NAME 기준)
+const KO_NAMES = {
+  'Afghanistan':'아프가니스탄','Albania':'알바니아','Algeria':'알제리','Angola':'앙골라',
+  'Antarctica':'남극','Argentina':'아르헨티나','Armenia':'아르메니아','Australia':'호주',
+  'Austria':'오스트리아','Azerbaijan':'아제르바이잔','Bahamas':'바하마','Bangladesh':'방글라데시',
+  'Belarus':'벨라루스','Belgium':'벨기에','Belize':'벨리즈','Benin':'베냉',
+  'Bhutan':'부탄','Bolivia':'볼리비아','Bosnia and Herz.':'보스니아','Botswana':'보츠와나',
+  'Brazil':'브라질','Brunei':'브루나이','Bulgaria':'불가리아','Burkina Faso':'부르키나파소',
+  'Burundi':'부룬디','Cambodia':'캄보디아','Cameroon':'카메룬','Canada':'캐나다',
+  'Central African Rep.':'중앙아프리카','Chad':'차드','Chile':'칠레','China':'중국',
+  'Colombia':'콜롬비아','Congo':'콩고','Costa Rica':'코스타리카','Côte d\'Ivoire':'코트디부아르',
+  'Croatia':'크로아티아','Cuba':'쿠바','Cyprus':'키프로스','Czechia':'체코',
+  'Dem. Rep. Congo':'콩고민주공화국','Denmark':'덴마크','Djibouti':'지부티',
+  'Dominican Rep.':'도미니카공화국','Ecuador':'에콰도르','Egypt':'이집트',
+  'El Salvador':'엘살바도르','Eq. Guinea':'적도기니','Eritrea':'에리트레아',
+  'Estonia':'에스토니아','Ethiopia':'에티오피아','Falkland Is.':'포클랜드',
+  'Fiji':'피지','Finland':'핀란드','Fr. S. Antarctic Lands':'프랑스령 남극',
+  'Gabon':'가봉','Gambia':'감비아','Georgia':'조지아','Germany':'독일',
+  'Ghana':'가나','Greece':'그리스','Greenland':'그린란드','Guatemala':'과테말라',
+  'Guinea':'기니','Guinea-Bissau':'기니비사우','Guyana':'가이아나',
+  'Haiti':'아이티','Honduras':'온두라스','Hungary':'헝가리','Iceland':'아이슬란드',
+  'India':'인도','Indonesia':'인도네시아','Iran':'이란','Iraq':'이라크',
+  'Ireland':'아일랜드','Israel':'이스라엘','Italy':'이탈리아','Jamaica':'자메이카',
+  'Japan':'일본','Jordan':'요르단','Kazakhstan':'카자흐스탄','Kenya':'케냐',
+  'Kosovo':'코소보','Kuwait':'쿠웨이트','Kyrgyzstan':'키르기스스탄','Laos':'라오스',
+  'Latvia':'라트비아','Lebanon':'레바논','Lesotho':'레소토','Liberia':'라이베리아',
+  'Libya':'리비아','Lithuania':'리투아니아','Luxembourg':'룩셈부르크',
+  'Macedonia':'북마케도니아','Madagascar':'마다가스카르','Malawi':'말라위',
+  'Malaysia':'말레이시아','Mali':'말리','Mauritania':'모리타니','Mexico':'멕시코',
+  'Moldova':'몰도바','Mongolia':'몽골','Montenegro':'몬테네그로','Morocco':'모로코',
+  'Mozambique':'모잠비크','Myanmar':'미얀마','Namibia':'나미비아','Nepal':'네팔',
+  'Netherlands':'네덜란드','New Caledonia':'뉴칼레도니아','New Zealand':'뉴질랜드',
+  'Nicaragua':'니카라과','Niger':'니제르','Nigeria':'나이지리아','North Korea':'북한',
+  'Norway':'노르웨이','Oman':'오만','Pakistan':'파키스탄','Palestine':'팔레스타인',
+  'Panama':'파나마','Papua New Guinea':'파푸아뉴기니','Paraguay':'파라과이',
+  'Peru':'페루','Philippines':'필리핀','Poland':'폴란드','Portugal':'포르투갈',
+  'Puerto Rico':'푸에르토리코','Qatar':'카타르','Romania':'루마니아','Russia':'러시아',
+  'Rwanda':'르완다','S. Sudan':'남수단','Saudi Arabia':'사우디아라비아',
+  'Senegal':'세네갈','Serbia':'세르비아','Sierra Leone':'시에라리온',
+  'Singapore':'싱가포르','Slovakia':'슬로바키아','Slovenia':'슬로베니아',
+  'Solomon Is.':'솔로몬제도','Somalia':'소말리아','South Africa':'남아프리카공화국',
+  'South Korea':'대한민국','Spain':'스페인','Sri Lanka':'스리랑카','Sudan':'수단',
+  'Suriname':'수리남','Swaziland':'에스와티니','Sweden':'스웨덴','Switzerland':'스위스',
+  'Syria':'시리아','Taiwan':'대만','Tajikistan':'타지키스탄','Tanzania':'탄자니아',
+  'Thailand':'태국','Timor-Leste':'동티모르','Togo':'토고',
+  'Trinidad and Tobago':'트리니다드토바고','Tunisia':'튀니지','Turkey':'튀르키예',
+  'Turkmenistan':'투르크메니스탄','Uganda':'우간다','Ukraine':'우크라이나',
+  'United Arab Emirates':'아랍에미리트','United Kingdom':'영국',
+  'United States of America':'미국','Uruguay':'우루과이','Uzbekistan':'우즈베키스탄',
+  'Vanuatu':'바누아투','Venezuela':'베네수엘라','Vietnam':'베트남',
+  'W. Sahara':'서사하라','Yemen':'예멘','Zambia':'잠비아','Zimbabwe':'짐바브웨',
+  'France':'프랑스','Nepal':'네팔',
+};
+
+const CAPITALS = {
+  'Afghanistan':'카불','Albania':'티라나','Algeria':'알제','Angola':'루안다',
+  'Antarctica':'','Argentina':'부에노스아이레스','Armenia':'예레반','Australia':'캔버라',
+  'Austria':'빈','Azerbaijan':'바쿠','Bahamas':'나소','Bangladesh':'다카',
+  'Belarus':'민스크','Belgium':'브뤼셀','Belize':'벨모판','Benin':'포르토노보',
+  'Bhutan':'팀부','Bolivia':'수크레','Bosnia and Herz.':'사라예보','Botswana':'가보로네',
+  'Brazil':'브라질리아','Brunei':'반다르스리브가완','Bulgaria':'소피아','Burkina Faso':'와가두구',
+  'Burundi':'기테가','Cambodia':'프놈펜','Cameroon':'야운데','Canada':'오타와',
+  'Central African Rep.':'방기','Chad':'은자메나','Chile':'산티아고','China':'베이징',
+  'Colombia':'보고타','Congo':'브라자빌','Costa Rica':'산호세','Côte d\'Ivoire':'야무수크로',
+  'Croatia':'자그레브','Cuba':'아바나','Cyprus':'니코시아','Czechia':'프라하',
+  'Dem. Rep. Congo':'킨샤사','Denmark':'코펜하겐','Djibouti':'지부티',
+  'Dominican Rep.':'산토도밍고','Ecuador':'키토','Egypt':'카이로',
+  'El Salvador':'산살바도르','Eq. Guinea':'말라보','Eritrea':'아스마라',
+  'Estonia':'탈린','Ethiopia':'아디스아바바','Falkland Is.':'스탠리',
+  'Fiji':'수바','Finland':'헬싱키','France':'파리',
+  'Fr. S. Antarctic Lands':'','Gabon':'리브르빌','Gambia':'반줄',
+  'Georgia':'트빌리시','Germany':'베를린','Ghana':'아크라',
+  'Greece':'아테네','Greenland':'누크','Guatemala':'과테말라시티',
+  'Guinea':'코나크리','Guinea-Bissau':'비사우','Guyana':'조지타운',
+  'Haiti':'포르토프랭스','Honduras':'테구시갈파','Hungary':'부다페스트',
+  'Iceland':'레이캬비크','India':'뉴델리','Indonesia':'자카르타',
+  'Iran':'테헤란','Iraq':'바그다드','Ireland':'더블린',
+  'Israel':'예루살렘','Italy':'로마','Jamaica':'킹스턴',
+  'Japan':'도쿄','Jordan':'암만','Kazakhstan':'아스타나',
+  'Kenya':'나이로비','Kosovo':'프리슈티나','Kuwait':'쿠웨이트시티',
+  'Kyrgyzstan':'비슈케크','Laos':'비엔티안','Latvia':'리가',
+  'Lebanon':'베이루트','Lesotho':'마세루','Liberia':'몬로비아',
+  'Libya':'트리폴리','Lithuania':'빌뉴스','Luxembourg':'룩셈부르크',
+  'Macedonia':'스코페','Madagascar':'안타나나리보','Malawi':'릴롱궤',
+  'Malaysia':'쿠알라룸푸르','Mali':'바마코','Mauritania':'누악쇼트',
+  'Mexico':'멕시코시티','Moldova':'키시너우','Mongolia':'울란바토르',
+  'Montenegro':'포드고리차','Morocco':'라바트','Mozambique':'마푸투',
+  'Myanmar':'네피도','Namibia':'빈트후크','Nepal':'카트만두',
+  'Netherlands':'암스테르담','New Caledonia':'누메아','New Zealand':'웰링턴',
+  'Nicaragua':'마나과','Niger':'니아메','Nigeria':'아부자',
+  'North Korea':'평양','Norway':'오슬로','Oman':'무스카트',
+  'Pakistan':'이슬라마바드','Palestine':'라말라','Panama':'파나마시티',
+  'Papua New Guinea':'포트모르즈비','Paraguay':'아순시온','Peru':'리마',
+  'Philippines':'마닐라','Poland':'바르샤바','Portugal':'리스본',
+  'Puerto Rico':'산후안','Qatar':'도하','Romania':'부쿠레슈티',
+  'Russia':'모스크바','Rwanda':'키갈리','S. Sudan':'주바',
+  'Saudi Arabia':'리야드','Senegal':'다카르','Serbia':'베오그라드',
+  'Sierra Leone':'프리타운','Singapore':'싱가포르','Slovakia':'브라티슬라바',
+  'Slovenia':'류블랴나','Solomon Is.':'호니아라','Somalia':'모가디슈',
+  'South Africa':'프리토리아','South Korea':'서울','Spain':'마드리드',
+  'Sri Lanka':'스리자야와르데네푸라코테','Sudan':'하르툼','Suriname':'파라마리보',
+  'Swaziland':'음바바네','Sweden':'스톡홀름','Switzerland':'베른',
+  'Syria':'다마스쿠스','Taiwan':'타이베이','Tajikistan':'두샨베',
+  'Tanzania':'도도마','Thailand':'방콕','Timor-Leste':'딜리',
+  'Togo':'로메','Trinidad and Tobago':'포트오브스페인','Tunisia':'튀니스',
+  'Turkey':'앙카라','Turkmenistan':'아시가바트','Uganda':'캄팔라',
+  'Ukraine':'키이우','United Arab Emirates':'아부다비',
+  'United Kingdom':'런던','United States of America':'워싱턴 D.C.',
+  'Uruguay':'몬테비데오','Uzbekistan':'타슈켄트',
+  'Vanuatu':'포트빌라','Venezuela':'카라카스','Vietnam':'하노이',
+  'W. Sahara':'엘아이운','Yemen':'사나','Zambia':'루사카','Zimbabwe':'하라레',
+};
+
+function getCapital(name) {
+  return CAPITALS[name] || '';
+}
+
+function flagImg(name, size = 32) {
+  const iso = GEO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="${size}" style="border-radius:3px;vertical-align:middle;" alt="">`;
+  return '🏳️';
+}
+
+function flagImgLarge(name) {
+  const iso = GEO_ISO[name];
+  if (iso) return `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" style="width:64px;border-radius:6px;" alt="">`;
+  return '<span style="font-size:48px;">🏳️</span>';
+}
+
+function getIso(name) {
+  return GEO_ISO[name] || '';
+}
+
+function getKoName(name) {
+  return KO_NAMES[name] || name;
+}
+const MODELS = {
+    'gemini-3.5-flash-lite': { name: 'gemini-3.5-flash-lite', rpm: 15, rpd: 500, maxTokens: 65536 },
+    'gemini-3.5-flash': { name: 'gemini-3.5-flash', rpm: 5, rpd: 20, maxTokens: 65536 },
+    'gemini-3.6-flash': { name: 'gemini-3.6-flash', rpm: 5, rpd: 20, maxTokens: 65536 }
+};
+let AI_MODEL;
+
+// ══════════════════════════════════════════════════════════════
+// AI 국가 정보 조회 + 캐싱
+// ══════════════════════════════════════════════════════════════
+const COUNTRY_PROMPT = `당신은 여행 정보 전문가입니다. 주어진 국가에 대해 아래 JSON 구조를 정확히 채워서 반환하세요.
+반드시 한국어로 작성하고, 설명 없이 순수 JSON 객체만 출력하세요. \`\`\`json 같은 마크다운 감싸기도 하지 마세요.
+
+{
+  "nameKo": "한국어 국가명",
+  "nameEn": "영어 국가명",
+  "flag": "국기 이모지",
+  "continent": "대륙명 (한국어)",
+  "continentIcon": "대륙 이모지 (🌍🌎🌏 중 하나)",
+  "capital": "수도",
+  "majorCities": [
+    { "name": "도시 한국어명", "nameEn": "영어명", "desc": "한줄 설명" }
+  ],
+  "landmarks": [
+    { "icon": "이모지", "name": "한국어명", "nameEn": "영어명" }
+  ],
+  "language": "사용 언어 (한국어 설명 포함)",
+  "phrases": [
+    { "ko": "안녕하세요", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "감사합니다", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "실례합니다", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "얼마예요?", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "화장실 어디예요?", "local": "현지어", "pron": "한국어 발음" },
+    { "ko": "도와주세요", "local": "현지어", "pron": "한국어 발음" }
+  ],
+  "seasons": ["good/ok/bad 12개월 배열 (1월~12월)"],
+  "bestTime": "여행 추천 시기",
+  "avoidTime": "피해야 할 시기와 이유",
+  "foods": [
+    { "icon": "음식 이모지", "name": "음식명" }
+  ],
+  "currency": {
+    "name": "통화명 (예: USD (미국 달러))",
+    "symbol": "통화 기호",
+    "rate": "1만원 ≈ 환산 금액",
+    "coffee": "커피 한 잔 가격 (현지+원화)",
+    "meal": "식사 한 끼 가격 (현지+원화)"
+  },
+  "timezone": "한국 대비 시차",
+  "flight": {
+    "direct": "인천 출발 직항 소요시간 (없으면 '직항 없음')",
+    "transit": "경유 시 소요시간",
+    "airlines": "주요 운항 항공사"
+  },
+  "visa": {
+    "type": "비자 유형 (무비자/도착비자/ESTA 등)",
+    "desc": "상세 안내",
+    "fee": "비용 (원화 환산 포함)"
+  },
+  "plug": {
+    "voltage": "전압/주파수",
+    "type": "플러그 타입",
+    "note": "한국 기기 사용 시 참고사항"
+  },
+  "culture": [
+    { "title": "항목명", "desc": "설명" }
+  ],
+  "transport": [
+    { "icon": "교통 이모지", "name": "교통수단명", "desc": "설명" }
+  ],
+  "itinerary": [
+    {
+      "title": "일정 제목 (예: 파리 5일)",
+      "days": ["Day 1: 일정 내용", "Day 2: ..."]
+    }
+  ],
+  "emergency": {
+    "police": "긴급 전화번호",
+    "embassy": "주재 대한민국 대사관 연락처",
+    "embassyAddr": "대사관 주소",
+    "insurance": "여행자보험 관련 주의사항"
+  }
+}
+
+주의사항:
+- majorCities는 5~6개, landmarks는 5~6개, foods는 6~8개, culture는 4~5개, transport는 4~5개
+- itinerary는 추천 일정 2개 (짧은 일정 + 긴 일정)
+- seasons 배열은 반드시 12개 문자열 ("good", "ok", "bad")
+- 모든 가격은 원화(₩) 환산 포함
+- phrases의 pron은 한국어 발음 표기`;
+
+function getCachedCountry(name) {
+  try {
+    const raw = localStorage.getItem('wtm_' + name);
+    if (raw) {
+      const cached = JSON.parse(raw);
+      if (cached._model === AI_MODEL) return cached;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function setCachedCountry(name, data) {
+  try {
+    data._model = AI_MODEL;
+    localStorage.setItem('wtm_' + name, JSON.stringify(data));
+  } catch(e) {}
+}
+
+async function fetchCountryFromAI(countryName) {
+  const info = COUNTRY_NAMES[countryName];
+  const ko = info ? info.ko : countryName;
+
+  const contents = [{
+    role: 'user',
+    parts: [{ text: COUNTRY_PROMPT + '\n\n국가: ' + ko + ' (' + countryName + ')' }]
+  }];
+
+  const res = await fetch('/api/country', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: AI_MODEL,
+      contents,
+      generationConfig: { temperature: 0.5, maxOutputTokens: 8192 }
+    })
+  });
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error?.message || 'API 오류 ' + res.status);
+  }
+
+  const data = await res.json();
+  const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+  // JSON 파싱 (```json 감싸기 제거)
+  const cleaned = text.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+  return JSON.parse(cleaned);
+}
+
+// ══════════════════════════════════════════════════════════════
+// 3D 지구본
+// ══════════════════════════════════════════════════════════════
+async function init3DGlobe() {
+  try {
+    const res = await fetch('https://raw.githubusercontent.com/vasturiano/globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson');
+    geoData = await res.json();
+    // ISO 코드 매핑 구축
+    geoData.features.forEach(f => {
+      const p = f.properties;
+      if (p.ISO_A2 && p.ISO_A2 !== '-99') {
+        GEO_ISO[p.NAME] = p.ISO_A2;
+      }
+    });
+    // Natural Earth에서 ISO_A2가 -99인 국가 보완
+    const ISO_FIXES = { 'France':'FR', 'Norway':'NO', 'N. Cyprus':'CY', 'Somaliland':'SO' };
+    Object.entries(ISO_FIXES).forEach(([n, iso]) => { if (!GEO_ISO[n]) GEO_ISO[n] = iso; });
+  } catch(e) {
+    console.error('GeoJSON 로드 실패:', e);
+    document.getElementById('globe3d').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">3D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
+    return;
+  }
+
+  const container = document.getElementById('globe3d');
+  const w = container.clientWidth || window.innerWidth;
+  const h = container.clientHeight || window.innerHeight - 56;
+
+  globe = Globe()
+    .width(w)
+    .height(h)
+    .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
+    .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
+    .polygonsData(geoData.features)
+    .polygonCapColor(d => {
+      if (selectedCountry && d.properties.NAME === selectedCountry) return 'rgba(99, 102, 241, 0.6)';
+      return 'rgba(30, 60, 120, 0.4)';
+    })
+    .polygonSideColor(() => 'rgba(99, 102, 241, 0.08)')
+    .polygonStrokeColor(() => 'rgba(150, 180, 255, 0.3)')
+    .polygonAltitude(() => 0.008)
+    .polygonLabel(d => {
+      const name = d.properties.NAME;
+      const ko = getKoName(name);
+      const initials = d.properties.ISO_A2 && d.properties.ISO_A2 !== '-99' ? d.properties.ISO_A2 : name.slice(0,2).toUpperCase();
+      const fi = flagImg(name, 16);
+      const cap = getCapital(name);
+      return `<div style="padding:8px 14px;background:rgba(15,20,35,0.95);border:1px solid rgba(255,255,255,0.15);border-radius:8px;font-size:13px;font-weight:500;color:#fff;backdrop-filter:blur(10px);box-shadow:0 8px 24px rgba(0,0,0,0.4);font-family:'Noto Sans KR',sans-serif;display:flex;align-items:center;gap:8px;white-space:nowrap;">
+        ${fi} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;">${initials}</span> ${ko}${cap ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:2px;">${cap}</span>` : ''}
+      </div>`;
+    })
+    .onPolygonHover(d => {
+      container.style.cursor = d ? 'pointer' : 'default';
+      globe
+        .polygonCapColor(f => {
+          if (selectedCountry && f.properties.NAME === selectedCountry) return 'rgba(99, 102, 241, 0.6)';
+          if (d && f === d) return 'rgba(99, 102, 241, 0.35)';
+          return 'rgba(30, 60, 120, 0.4)';
+        })
+        .polygonStrokeColor(f => {
+          if (d && f === d) return 'rgba(165, 180, 252, 0.9)';
+          return 'rgba(150, 180, 255, 0.3)';
+        });
+    })
+    .onPolygonClick(d => {
+      if (!d) {
+        // 빈 곳 터치 → 말풍선 닫기
+        tappedCountry = null;
+        hideMobileBubble();
+        return;
+      }
+      const name = d.properties.NAME;
+      if (isMobile) {
+        tappedCountry = name;
+        showMobileBubble(name);
+        globe
+          .polygonCapColor(f => f.properties.NAME === name ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.4)')
+          .polygonStrokeColor(f => f.properties.NAME === name ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.3)');
+      } else {
+        selectCountry(name);
+      }
+    })
+    .atmosphereColor('#6366f1')
+    .atmosphereAltitude(0.2)
+    (container);
+
+  globe.pointOfView({ lat: 35, lng: 128, altitude: 2.2 }, 0);
+
+  // 리사이즈 대응
+  window.addEventListener('resize', () => {
+    if (globe && currentView === '3d') {
+      globe.width(container.clientWidth);
+      globe.height(container.clientHeight);
+    }
+  });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 2D 지도
+// ══════════════════════════════════════════════════════════════
+let map2dInited = false;
+let map2dSvg = null, map2dG = null, map2dZoom = null, map2dProjection = null;
+let map2dIdToName = {}, map2dIdToIso = {};
+const MAP2D_W = 960, MAP2D_H = 500;
+
+async function init2DMap() {
+  if (map2dInited) return;
+  map2dInited = true;
+
+  const container = document.getElementById('map2d');
+  const width = MAP2D_W;
+  const height = MAP2D_H;
+
+  const svg = d3.select('#map2d')
+    .append('svg')
+    .attr('viewBox', `0 0 ${width} ${height}`)
+    .attr('preserveAspectRatio', 'xMidYMid meet')
+    .style('width', '100%')
+    .style('height', '100%')
+    .style('background', '#0a0e1a');
+
+  const projection = d3.geoNaturalEarth1()
+    .scale(160)
+    .translate([width / 2, height / 2]);
+  map2dProjection = projection;
+
+  const path = d3.geoPath().projection(projection);
+
+  let world, countryNamesList;
+  try {
+    const [worldRes, countryNamesRes] = await Promise.all([
+      fetch('https://unpkg.com/world-atlas@2/countries-110m.json'),
+      fetch('https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/slim-2/slim-2.json')
+    ]);
+    world = await worldRes.json();
+    countryNamesList = await countryNamesRes.json();
+  } catch(e) {
+    console.error('2D 데이터 로드 실패:', e);
+    container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;font-size:14px;">2D 데이터 로드 실패 — 인터넷 연결을 확인하세요</div>';
+    return;
+  }
+  const countries = topojson.feature(world, world.objects.countries);
+  const idToName = {};
+  const idToIso = {};
+  countryNamesList.forEach(c => {
+    idToName[c['country-code']] = c.name;
+    if (c['alpha-2']) idToIso[c['country-code']] = c['alpha-2'];
+  });
+  map2dIdToName = idToName;
+  map2dIdToIso = idToIso;
+
+  // ISO-3166 국가명 → GEO_ISO, KO_NAMES 보완
+  const ISO_KO_EXTRA = {
+    'Korea, Republic of':'대한민국','Korea (Republic of)':'대한민국',
+    'Russian Federation':'러시아','Viet Nam':'베트남',
+    'Iran, Islamic Republic of':'이란','Iran (Islamic Republic of)':'이란',
+    'Syrian Arab Republic':'시리아','Czech Republic':'체코','Czechia':'체코',
+    'Bolivia (Plurinational State of)':'볼리비아','Bolivia, Plurinational State of':'볼리비아',
+    'Venezuela (Bolivarian Republic of)':'베네수엘라','Venezuela, Bolivarian Republic of':'베네수엘라',
+    'Tanzania, United Republic of':'탄자니아','United Republic of Tanzania':'탄자니아',
+    'Congo, Democratic Republic of the':'콩고민주공화국','Democratic Republic of the Congo':'콩고민주공화국',
+    'Congo':'콩고','Republic of the Congo':'콩고',
+    'Moldova, Republic of':'몰도바','Republic of Moldova':'몰도바',
+    'Macedonia, the former Yugoslav Republic of':'북마케도니아','North Macedonia':'북마케도니아',
+    'Lao People\'s Democratic Republic':'라오스',
+    'Brunei Darussalam':'브루나이','Myanmar':'미얀마',
+    'Palestine, State of':'팔레스타인','Taiwan, Province of China':'대만',
+    'Côte d\'Ivoire':'코트디부아르','Ivory Coast':'코트디부아르',
+    'Timor-Leste':'동티모르','East Timor':'동티모르',
+    'Eswatini':'에스와티니','Swaziland':'에스와티니',
+    'Cabo Verde':'카보베르데','Cape Verde':'카보베르데',
+    'United States':'미국','United States of America':'미국',
+    'United Kingdom of Great Britain and Northern Ireland':'영국',
+    'United Kingdom':'영국',
+  };
+  countryNamesList.forEach(c => {
+    const n = c.name;
+    const iso = c['alpha-2'];
+    if (iso && !GEO_ISO[n]) GEO_ISO[n] = iso;
+    if (!KO_NAMES[n] && ISO_KO_EXTRA[n]) KO_NAMES[n] = ISO_KO_EXTRA[n];
+  });
+
+  // 국가 그리기
+  const g = svg.append('g');
+  map2dSvg = svg;
+  map2dG = g;
+
+  g.selectAll('path')
+    .data(countries.features)
+    .enter()
+    .append('path')
+    .attr('d', path)
+    .attr('fill', 'rgba(30, 60, 120, 0.5)')
+    .attr('stroke', 'rgba(150, 180, 255, 0.2)')
+    .attr('stroke-width', 0.5)
+    .attr('data-id', d => d.id)
+    .style('cursor', 'pointer')
+    .style('transition', 'fill 0.2s')
+    .on('mouseover', function(event, d) {
+      const codeKey = String(d.id).padStart(3, '0');
+      const name = idToName[codeKey] || 'Unknown';
+      const iso = idToIso[codeKey] || '';
+      // GEO_ISO 동적 보완
+      if (iso && !GEO_ISO[name]) GEO_ISO[name] = iso;
+      d3.select(this)
+        .attr('fill', 'rgba(99, 102, 241, 0.5)')
+        .attr('stroke', 'rgba(165, 180, 252, 0.9)')
+        .attr('stroke-width', 1.5);
+
+      // ISO로 직접 국기 표시
+      const flagHtml = iso ? `<img src="https://flagcdn.com/${iso.toLowerCase()}.svg" width="16" style="border-radius:3px;vertical-align:middle;">` : '🏳️';
+      const koName = getKoName(name) || getKoName(findClosestCountryName(name) || name);
+      const tooltip = document.getElementById('tooltip');
+      const cap2d = getCapital(name) || getCapital(findClosestCountryName(name) || '');
+      tooltip.innerHTML = `${flagHtml} <span style="color:rgba(255,255,255,0.4);font-size:11px;font-weight:700;margin:0 4px;">${iso || name.slice(0,2).toUpperCase()}</span> ${koName}${cap2d ? `<span style="color:rgba(255,255,255,0.35);font-size:11px;margin-left:6px;">${cap2d}</span>` : ''}`;
+      tooltip.style.display = 'block';
+      tooltip.style.left = (event.clientX + 16) + 'px';
+      tooltip.style.top = (event.clientY - 10) + 'px';
+    })
+    .on('mousemove', function(event) {
+      const tooltip = document.getElementById('tooltip');
+      tooltip.style.left = (event.clientX + 16) + 'px';
+      tooltip.style.top = (event.clientY - 10) + 'px';
+    })
+    .on('mouseout', function(event, d) {
+      const ck = String(d.id).padStart(3, '0');
+      const nm = findClosestCountryName(idToName[ck] || '') || '';
+      const isSel = selectedCountry && nm === selectedCountry;
+      d3.select(this)
+        .attr('fill', isSel ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)')
+        .attr('stroke', isSel ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)')
+        .attr('stroke-width', isSel ? 1.5 : 0.5);
+      document.getElementById('tooltip').style.display = 'none';
+    })
+    .on('click', function(event, d) {
+      const codeKey2 = String(d.id).padStart(3, '0');
+      const name = idToName[codeKey2] || '';
+      const matched = findClosestCountryName(name) || name;
+      if (!matched) return;
+
+      // 2D에서도 GEO_ISO에 ISO 등록 (없으면)
+      if (!GEO_ISO[matched] && idToIso[codeKey2]) GEO_ISO[matched] = idToIso[codeKey2];
+      if (!GEO_ISO[name] && idToIso[codeKey2]) GEO_ISO[name] = idToIso[codeKey2];
+
+      if (isMobile) {
+        tappedCountry = matched;
+        showMobileBubble(matched);
+        d3.select('#map2d').selectAll('path')
+          .attr('fill', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(99, 102, 241, 0.5)' : 'rgba(30, 60, 120, 0.5)';
+          })
+          .attr('stroke', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
+          })
+          .attr('stroke-width', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 1.5 : 0.5;
+          });
+      } else {
+        selectCountry(matched);
+        // 이전 선택 해제 + 새 선택 반영
+        d3.select('#map2d').selectAll('path')
+          .attr('fill', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)';
+          })
+          .attr('stroke', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
+          })
+          .attr('stroke-width', f => {
+            const fn = idToName[String(f.id).padStart(3, '0')] || '';
+            const fm = findClosestCountryName(fn);
+            return fm === matched ? 1.5 : 0.5;
+          });
+      }
+    });
+
+  // 줌
+  const zoom = d3.zoom()
+    .scaleExtent([1, 8])
+    .on('zoom', (event) => {
+      g.attr('transform', event.transform);
+    });
+  svg.call(zoom);
+  map2dZoom = zoom;
+}
+
+function findCountryByEnName(name) {
+  for (const [en, info] of Object.entries(COUNTRY_NAMES)) {
+    if (en === name || en.includes(name) || name.includes(en)) return info;
+  }
+  return null;
+}
+
+function findClosestCountryName(name) {
+  for (const en of Object.keys(COUNTRY_NAMES)) {
+    if (en === name || en.includes(name) || name.includes(en)) return en;
+  }
+  // 데이터 있는 국가만
+  for (const en of Object.keys(COUNTRY_DATA)) {
+    if (en === name || en.includes(name) || name.includes(en)) return en;
+  }
+  return name;
+}
+
+function getCountryEnName(d) {
+  return '';
+}
+
+// ══════════════════════════════════════════════════════════════
+// 뷰 전환
+// ══════════════════════════════════════════════════════════════
+function switchView(view) {
+  currentView = view;
+  document.getElementById('globe3d').style.display = view === '3d' ? 'block' : 'none';
+  document.getElementById('map2d').style.display = view === '2d' ? 'block' : 'none';
+  document.getElementById('btn3d').classList.toggle('active', view === '3d');
+  document.getElementById('btn2d').classList.toggle('active', view === '2d');
+
+  if (view === '3d' && globe) {
+    const c = document.getElementById('globe3d');
+    globe.width(c.clientWidth);
+    globe.height(c.clientHeight);
+  }
+  if (view === '2d') {
+    init2DMap();
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 국가 선택
+// ══════════════════════════════════════════════════════════════
+async function selectCountry(name) {
+  selectedCountry = name;
+  tappedCountry = null;
+  hideMobileBubble();
+  let data = COUNTRY_DATA[name];
+  const info = COUNTRY_NAMES[name];
+
+  // 데이터 없으면: 캐시 확인 → 없으면 AI 호출
+  if (!data) {
+    const cached = getCachedCountry(name);
+    if (cached) {
+      data = cached;
+      COUNTRY_DATA[name] = data;
+    } else {
+      // 로딩 UI 표시
+      const panel = document.getElementById('infoPanel');
+      const ko = getKoName(name);
+      const fi = flagImgLarge(name);
+      const capLocal = getCapital(name);
+      document.getElementById('infoPanelContent').innerHTML = `
+        <div class="info-hero">
+          <div class="info-flag">${fi}</div>
+          <div class="info-country">${ko}${capLocal ? ` <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${capLocal}</span>` : ''}</div>
+          <div class="info-country-en">${name}</div>
+        </div>
+        <div class="info-section" style="text-align:center; padding:80px 24px;">
+          <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.1);border-top-color:#6366f1;border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 16px;"></div>
+          <p style="color:rgba(255,255,255,0.5); font-size:14px;">AI가 여행 정보를 수집하고 있습니다...</p>
+          <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:6px;">${ko} 정보를 불러오는 중</p>
+        </div>
+        <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`;
+      panel.classList.add('open');
+
+      // 3D 카메라 이동
+      moveGlobeCamera(name);
+
+      try {
+        data = await fetchCountryFromAI(name);
+        COUNTRY_DATA[name] = data;
+        setCachedCountry(name, data);
+      } catch(e) {
+        console.error('AI 국가 정보 조회 실패:', e);
+        document.getElementById('infoPanelContent').innerHTML = `
+          <div class="info-hero">
+            <div class="info-flag">${fi}</div>
+            <div class="info-country">${ko}${capLocal ? ` <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${capLocal}</span>` : ''}</div>
+            <div class="info-country-en">${name}</div>
+          </div>
+          <div class="info-section" style="text-align:center; padding:60px 24px;">
+            <p style="color:#f87171; font-size:14px;">정보를 불러오지 못했습니다</p>
+            <p style="color:rgba(255,255,255,0.25); font-size:12px; margin-top:6px;">${e.message}</p>
+            <button onclick="selectCountry('${name}')" style="margin-top:16px;padding:10px 24px;background:#6366f1;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;">다시 시도</button>
+          </div>`;
+        return;
+      }
+
+      // 로딩 중 다른 국가 클릭했으면 무시
+      if (selectedCountry !== name) return;
+    }
+  }
+
+  const months = ['1','2','3','4','5','6','7','8','9','10','11','12'];
+
+  document.getElementById('infoPanelContent').innerHTML = `
+    <!-- 헤더: 국기 + 나라이름 + 수도 + 대륙 -->
+    <div class="info-hero">
+      <div class="info-flag">${flagImgLarge(name)}</div>
+      <div class="info-country">${data.nameKo} <span style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4);margin-left:4px;">${getCapital(name) || data.capital}</span></div>
+      <div class="info-country-en">${data.nameEn}</div>
+      <div class="info-continent">${data.continentIcon} ${data.continent}</div>
+    </div>
+
+    <!-- 1. 기본 정보 -->
+    <div class="info-section">
+      <div class="info-section-title">기본 정보</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">🕐 시차</div>
+          <div class="info-item-value">${data.timezone}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🔌 콘센트</div>
+          <div class="info-item-value">${data.plug.voltage}<br><span style="font-size:11px;color:rgba(255,255,255,0.4);">${data.plug.type}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. 사용언어 + 기본회화 -->
+    <div class="info-section">
+      <div class="info-section-title">🗣 사용 언어 — ${data.language}</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.phrases.map(p => `
+          <div class="phrase-item">
+            <span class="phrase-ko">${p.ko}</span>
+            <div class="phrase-right">
+              <div class="phrase-local">${p.local}</div>
+              <div class="phrase-pron">${p.pron}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 3. 대표도시 -->
+    <div class="info-section">
+      <div class="info-section-title">대표 도시</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.majorCities.map((c, i) => `
+          <div class="city-item">
+            <div class="city-num">${i + 1}</div>
+            <div>
+              <div class="city-name">${c.name} <span class="city-name-en">${c.nameEn}</span></div>
+              <div class="city-desc">${c.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 4. 랜드마크 -->
+    <div class="info-section">
+      <div class="info-section-title">랜드마크</div>
+      <div class="landmark-list">
+        ${data.landmarks.map(l => `
+          <div class="landmark-item">
+            <span class="landmark-icon">${l.icon}</span>
+            <div>
+              <div class="landmark-name">${l.name}</div>
+              <div class="landmark-name-en">${l.nameEn}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 5. 여행 시기 -->
+    <div class="info-section">
+      <div class="info-section-title">여행 시기</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">✅ 여행하기 좋은 시기</div>
+          <div class="info-item-value">${data.bestTime}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">⚠️ 피해야 할 시기</div>
+          <div class="info-item-value">${data.avoidTime}</div>
+        </div>
+      </div>
+      <div class="season-bar">
+        ${months.map((m, i) => `<div class="season-month ${data.seasons[i]}">${m}</div>`).join('')}
+      </div>
+      <div style="display:flex;gap:12px;margin-top:8px;font-size:10px;color:rgba(255,255,255,0.35);">
+        <span><span style="color:#4ade80;">●</span> 추천</span>
+        <span><span style="color:#facc15;">●</span> 보통</span>
+        <span><span style="color:#f87171;">●</span> 비추천</span>
+      </div>
+    </div>
+
+    <!-- 6. 대표 음식 -->
+    <div class="info-section">
+      <div class="info-section-title">대표 음식</div>
+      <div class="food-tags">
+        ${data.foods.map(f => `<span class="food-tag">${f.icon} ${f.name}</span>`).join('')}
+      </div>
+    </div>
+
+    <!-- 7. 통화 + 현지 물가 -->
+    <div class="info-section">
+      <div class="info-section-title">통화 / 현지 물가</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">💱 통화 · 환율</div>
+          <div class="info-item-value">${data.currency.name} — ${data.currency.rate}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">☕ 커피 한 잔</div>
+          <div class="info-item-value">${data.currency.coffee}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🍽 식사 한 끼</div>
+          <div class="info-item-value">${data.currency.meal}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 8. 항공편 -->
+    <div class="info-section">
+      <div class="info-section-title">항공편</div>
+      <div class="info-grid">
+        <div class="info-item">
+          <div class="info-item-label">✈️ 직항</div>
+          <div class="info-item-value">${data.flight.direct}</div>
+        </div>
+        <div class="info-item">
+          <div class="info-item-label">🔄 경유</div>
+          <div class="info-item-value">${data.flight.transit}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">🛫 주요 항공사</div>
+          <div class="info-item-value">${data.flight.airlines}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 9. 비자 -->
+    <div class="info-section">
+      <div class="info-section-title">비자</div>
+      <div class="info-grid">
+        <div class="info-item full">
+          <div class="info-item-label">📋 유형</div>
+          <div class="info-item-value">${data.visa.type}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">📝 안내</div>
+          <div class="info-item-value" style="font-size:12px;font-weight:400;color:rgba(255,255,255,0.7);line-height:1.5;">${data.visa.desc}</div>
+        </div>
+        <div class="info-item full">
+          <div class="info-item-label">💵 비용</div>
+          <div class="info-item-value">${data.visa.fee}</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 10. 문화/매너 -->
+    <div class="info-section">
+      <div class="info-section-title">문화 / 매너</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.culture.map(c => `
+          <div class="culture-item">
+            <div class="culture-title">${c.title}</div>
+            <div class="culture-desc">${c.desc}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 11. 교통정보 -->
+    <div class="info-section">
+      <div class="info-section-title">교통 정보</div>
+      <div style="display:flex;flex-direction:column;gap:6px;">
+        ${data.transport.map(t => `
+          <div class="transport-item">
+            <span class="transport-icon">${t.icon}</span>
+            <div>
+              <div class="transport-name">${t.name}</div>
+              <div class="transport-desc">${t.desc}</div>
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 12. 추천 일정 -->
+    <div class="info-section">
+      <div class="info-section-title">추천 일정</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        ${data.itinerary.map((it, idx) => `
+          <div class="itinerary-card">
+            <div class="itinerary-title" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+              ${it.title}
+              <span style="font-size:11px;color:rgba(255,255,255,0.3);">펼치기 ▾</span>
+            </div>
+            <div class="itinerary-body" ${idx > 0 ? 'style="display:none;"' : ''}>
+              ${it.days.map(d => {
+                const parts = d.split(':');
+                return `<div class="itinerary-day"><strong>${parts[0]}:</strong>${parts.slice(1).join(':')}</div>`;
+              }).join('')}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <!-- 13. 긴급 연락처 -->
+    <div class="info-section">
+      <div class="info-section-title">긴급 연락처</div>
+      <div class="emergency-card">
+        <div class="emergency-row">
+          <span class="emergency-label">🚨 긴급전화</span>
+          <span class="emergency-value">${data.emergency.police}</span>
+        </div>
+        <div class="emergency-row">
+          <span class="emergency-label">🏛 대사관</span>
+          <span class="emergency-value">${data.emergency.embassy}</span>
+        </div>
+        <div class="emergency-row">
+          <span class="emergency-label">📍 주소</span>
+          <span class="emergency-value" style="font-size:10px;">${data.emergency.embassyAddr}</span>
+        </div>
+        <div class="emergency-warn">⚠️ ${data.emergency.insurance}</div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('infoPanel').classList.add('open');
+  moveGlobeCamera(name);
+}
+
+function moveGlobeCamera(name) {
+  if (currentView === '3d' && globe && geoData) {
+    const feature = geoData.features.find(f => f.properties.NAME === name);
+    if (feature) {
+      const coords = d3.geoCentroid(feature);
+      const pov = globe.pointOfView();
+      globe.pointOfView({ lat: coords[1], lng: coords[0], altitude: pov.altitude }, 1000);
+    }
+    globe.polygonCapColor(f => {
+      if (f.properties.NAME === name) return 'rgba(99, 102, 241, 0.6)';
+      return 'rgba(30, 60, 120, 0.4)';
+    });
+  }
+  if (currentView === '2d' && map2dSvg && map2dProjection) {
+    // 선택 하이라이트
+    map2dG.selectAll('path')
+      .attr('fill', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 'rgba(99,102,241,0.6)' : 'rgba(30, 60, 120, 0.5)';
+      })
+      .attr('stroke', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 'rgba(165, 180, 252, 0.9)' : 'rgba(150, 180, 255, 0.2)';
+      })
+      .attr('stroke-width', f => {
+        const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+        const fm = findClosestCountryName(fn);
+        return fm === name ? 1.5 : 0.5;
+      });
+    // 해당 국가로 줌 이동
+    const target = map2dG.selectAll('path').filter(f => {
+      const fn = map2dIdToName[String(f.id).padStart(3, '0')] || '';
+      return findClosestCountryName(fn) === name;
+    });
+    if (!target.empty()) {
+      const bounds = path2dBounds(target.datum());
+      if (bounds) {
+        const [[x0, y0], [x1, y1]] = bounds;
+        const dx = x1 - x0, dy = y1 - y0;
+        const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+        const scale = Math.min(8, 0.8 / Math.max(dx / MAP2D_W, dy / MAP2D_H));
+        const tx = MAP2D_W / 2 - scale * cx;
+        const ty = MAP2D_H / 2 - scale * cy;
+        map2dSvg.transition().duration(1000)
+          .call(map2dZoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      }
+    }
+  }
+}
+
+function path2dBounds(datum) {
+  if (!map2dProjection) return null;
+  const path = d3.geoPath().projection(map2dProjection);
+  return path.bounds(datum);
+}
+
+function closePanel() {
+  document.getElementById('infoPanel').classList.remove('open');
+  selectedCountry = null;
+  tappedCountry = null;
+  if (globe) {
+    globe.polygonCapColor(() => 'rgba(30, 60, 120, 0.4)');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 모바일 말풍선
+// ══════════════════════════════════════════════════════════════
+function showMobileBubble(name) {
+  const bubble = document.getElementById('mobileBubble');
+  tappedCountry = name;
+  document.getElementById('bubbleBtnText').textContent = getKoName(name) + ' 상세보기';
+  bubble.style.display = 'flex';
+}
+
+function hideMobileBubble() {
+  document.getElementById('mobileBubble').style.display = 'none';
+}
+
+function openBubbleDetail() {
+  if (tappedCountry) {
+    hideMobileBubble();
+    selectCountry(tappedCountry);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 검색
+// ══════════════════════════════════════════════════════════════
+const searchInput = document.getElementById('searchInput');
+const searchResults = document.getElementById('searchResults');
+
+searchInput.addEventListener('input', () => {
+  const q = searchInput.value.trim().toLowerCase();
+  if (!q) {
+    searchResults.classList.remove('show');
+    return;
+  }
+
+  const matches = Object.entries(KO_NAMES)
+    .filter(([en, ko]) => {
+      if (ko.includes(q)) return true;
+      const enLow = en.toLowerCase();
+      // ISO 코드 매칭
+      const iso = GEO_ISO[en];
+      if (iso && iso.toLowerCase() === q) return true;
+      // 영문 단어 앞글자 매칭
+      return enLow.split(/[\s,.-]+/).some(w => w.startsWith(q));
+    })
+    .slice(0, 20);
+
+  if (matches.length === 0) {
+    searchResults.innerHTML = '<div class="sr-item" style="color:rgba(255,255,255,0.35);cursor:default;">검색 결과가 없습니다</div>';
+  } else {
+    searchResults.innerHTML = matches.map(([en, ko]) =>
+      `<div class="sr-item" onclick="onSearchSelect('${en.replace(/'/g, "\\'")}')">
+        <span class="sr-flag">${flagImg(en, 20)}</span>
+        <span class="sr-name">${ko}</span>
+        <span style="font-size:11px;color:rgba(255,255,255,0.3);margin-left:4px;">${getIso(en)}</span>
+      </div>`
+    ).join('');
+  }
+  searchResults.classList.add('show');
+  searchIdx = -1;
+});
+
+let searchIdx = -1;
+
+function updateSearchActive() {
+  const items = searchResults.querySelectorAll('.sr-item[onclick]');
+  items.forEach((el, i) => el.classList.toggle('active', i === searchIdx));
+  if (searchIdx >= 0 && items[searchIdx]) {
+    items[searchIdx].scrollIntoView({ block: 'nearest' });
+  }
+}
+
+searchInput.addEventListener('keydown', (e) => {
+  const items = searchResults.querySelectorAll('.sr-item[onclick]');
+  if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    searchIdx = items.length ? Math.min(searchIdx + 1, items.length - 1) : -1;
+    updateSearchActive();
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    searchIdx = Math.max(searchIdx - 1, 0);
+    updateSearchActive();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchIdx >= 0 && items[searchIdx]) {
+      items[searchIdx].click();
+    }
+  } else if (e.key === 'Escape') {
+    searchResults.classList.remove('show');
+    searchInput.blur();
+  }
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.search-wrap')) {
+    searchResults.classList.remove('show');
+  }
+});
+
+function onSearchSelect(name) {
+  searchResults.classList.remove('show');
+  searchInput.value = '';
+  if (isMobile) {
+    tappedCountry = name;
+    showMobileBubble(name);
+    moveGlobeCamera(name);
+  } else {
+    selectCountry(name);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+// 초기화
+// ══════════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  // 모델 드롭다운 생성
+  const modelSelect = document.getElementById('modelSelect');
+  for (const [key, cfg] of Object.entries(MODELS)) {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = cfg.name;
+    modelSelect.appendChild(opt);
+  }
+  AI_MODEL = modelSelect.value;
+  const savedModel = localStorage.getItem('wtm_model');
+  if (savedModel && MODELS[savedModel]) { AI_MODEL = savedModel; modelSelect.value = savedModel; }
+
+  init3DGlobe();
+});
+</script>
+
+</body>
+</html>
