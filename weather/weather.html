@@ -1,1 +1,473 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>날씨</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
 
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+
+    .top-bar {
+      background: #fff;
+      padding: 14px 20px;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .top-bar h1 { font-size: 17px; font-weight: 700; color: #111; }
+
+    .content { padding: 20px; }
+
+    /* Search */
+    .search-wrap {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .search-wrap input {
+      flex: 1;
+      padding: 12px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      background: #fff;
+    }
+
+    .search-wrap input:focus { border-color: #0ea5e9; }
+
+    .search-wrap button {
+      padding: 12px 16px;
+      border: none;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #0ea5e9, #06b6d4);
+      color: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .location-btn {
+      width: 100%;
+      padding: 10px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      margin-bottom: 20px;
+    }
+
+    .location-btn:hover { border-color: #0ea5e9; color: #0ea5e9; }
+
+    /* Current Weather */
+    .weather-card {
+      background: linear-gradient(135deg, #0ea5e9, #0284c7);
+      border-radius: 20px;
+      padding: 28px 24px;
+      color: #fff;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 20px rgba(14,165,233,0.3);
+    }
+
+    .weather-city {
+      font-size: 16px;
+      font-weight: 600;
+      opacity: 0.9;
+      margin-bottom: 4px;
+    }
+
+    .weather-date {
+      font-size: 12px;
+      opacity: 0.7;
+      margin-bottom: 20px;
+    }
+
+    .weather-main {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .weather-temp {
+      font-size: 56px;
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .weather-temp span {
+      font-size: 28px;
+      font-weight: 400;
+      vertical-align: top;
+    }
+
+    .weather-icon {
+      font-size: 64px;
+      line-height: 1;
+    }
+
+    .weather-desc {
+      font-size: 15px;
+      font-weight: 500;
+      margin-bottom: 20px;
+    }
+
+    .weather-details {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+
+    .weather-detail-item {
+      background: rgba(255,255,255,0.15);
+      border-radius: 12px;
+      padding: 12px;
+      text-align: center;
+    }
+
+    .weather-detail-item .label {
+      font-size: 11px;
+      opacity: 0.8;
+      margin-bottom: 4px;
+    }
+
+    .weather-detail-item .value {
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    /* Forecast */
+    .forecast-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #333;
+      margin-bottom: 12px;
+    }
+
+    .forecast-list {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 16px;
+    }
+
+    .forecast-list::-webkit-scrollbar { height: 3px; }
+    .forecast-list::-webkit-scrollbar-thumb { background: #ddd; border-radius: 2px; }
+
+    .forecast-item {
+      background: #fff;
+      border-radius: 14px;
+      padding: 14px 12px;
+      text-align: center;
+      min-width: 72px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      flex-shrink: 0;
+    }
+
+    .forecast-item .time {
+      font-size: 12px;
+      color: #999;
+      margin-bottom: 6px;
+    }
+
+    .forecast-item .icon {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .forecast-item .temp {
+      font-size: 14px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    /* Daily Forecast */
+    .daily-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    .daily-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f5f5f5;
+    }
+
+    .daily-row:last-child { border-bottom: none; }
+
+    .daily-day {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+      width: 50px;
+    }
+
+    .daily-icon { font-size: 22px; }
+
+    .daily-temps {
+      font-size: 14px;
+      text-align: right;
+    }
+
+    .daily-high { font-weight: 700; color: #111; }
+    .daily-low { color: #aaa; margin-left: 8px; }
+
+    /* Quick Cities */
+    .quick-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 10px;
+      margin-top: 20px;
+    }
+
+    .quick-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .quick-btn {
+      padding: 10px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 10px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.2s;
+    }
+
+    .quick-btn:hover { border-color: #0ea5e9; color: #0ea5e9; }
+
+    .loading {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    .error-msg {
+      text-align: center;
+      padding: 40px 20px;
+      color: #dc2626;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="top-bar">
+  <h1>&#9925; 날씨</h1>
+</div>
+
+<div class="content">
+  <div class="search-wrap">
+    <input type="text" id="cityInput" placeholder="도시명 (예: Seoul, Tokyo, London)" onkeydown="if(event.key==='Enter')searchCity()">
+    <button onclick="searchCity()">검색</button>
+  </div>
+
+  <button class="location-btn" onclick="getMyLocation()">&#128205; 현재 위치로 검색</button>
+
+  <p class="quick-title">주요 도시</p>
+  <div class="quick-grid">
+    <button class="quick-btn" onclick="loadWeather('Seoul')">서울</button>
+    <button class="quick-btn" onclick="loadWeather('Tokyo')">도쿄</button>
+    <button class="quick-btn" onclick="loadWeather('Osaka')">오사카</button>
+    <button class="quick-btn" onclick="loadWeather('Bangkok')">방콕</button>
+    <button class="quick-btn" onclick="loadWeather('New York')">뉴욕</button>
+    <button class="quick-btn" onclick="loadWeather('London')">런던</button>
+    <button class="quick-btn" onclick="loadWeather('Paris')">파리</button>
+    <button class="quick-btn" onclick="loadWeather('Sydney')">시드니</button>
+    <button class="quick-btn" onclick="loadWeather('Singapore')">싱가포르</button>
+  </div>
+
+  <div id="weatherResult"></div>
+</div>
+
+<script>
+  const API_KEY = '4d8fb5b93d4af21d66a2948710284366';
+
+  const WEATHER_ICONS = {
+    '01d': '☀️', '01n': '🌙',
+    '02d': '⛅', '02n': '☁️',
+    '03d': '☁️', '03n': '☁️',
+    '04d': '☁️', '04n': '☁️',
+    '09d': '🌧️', '09n': '🌧️',
+    '10d': '🌦️', '10n': '🌧️',
+    '11d': '⛈️', '11n': '⛈️',
+    '13d': '❄️', '13n': '❄️',
+    '50d': '🌫️', '50n': '🌫️'
+  };
+
+  const DAYS = ['일', '월', '화', '수', '목', '금', '토'];
+
+  function searchCity() {
+    const city = document.getElementById('cityInput').value.trim();
+    if (city) loadWeather(city);
+  }
+
+  function getMyLocation() {
+    if (!navigator.geolocation) {
+      alert('이 브라우저에서는 위치 기능을 지원하지 않습니다.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      pos => loadWeatherByCoords(pos.coords.latitude, pos.coords.longitude),
+      () => alert('위치를 가져올 수 없습니다. 위치 권한을 확인하세요.')
+    );
+  }
+
+  async function loadWeather(city) {
+    const result = document.getElementById('weatherResult');
+    result.innerHTML = '<div class="loading">날씨 정보를 불러오는 중...</div>';
+
+    try {
+      const currentRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric&lang=ko`
+      );
+
+      if (!currentRes.ok) {
+        result.innerHTML = '<div class="error-msg">도시를 찾을 수 없습니다. 영문 도시명으로 검색해보세요.</div>';
+        return;
+      }
+
+      const current = await currentRes.json();
+
+      const forecastRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?q=${encodeURIComponent(city)}&appid=${API_KEY}&units=metric&lang=ko`
+      );
+      const forecast = await forecastRes.json();
+
+      renderWeather(current, forecast);
+    } catch (err) {
+      result.innerHTML = '<div class="error-msg">날씨 정보를 불러올 수 없습니다.</div>';
+    }
+  }
+
+  async function loadWeatherByCoords(lat, lon) {
+    const result = document.getElementById('weatherResult');
+    result.innerHTML = '<div class="loading">날씨 정보를 불러오는 중...</div>';
+
+    try {
+      const currentRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=ko`
+      );
+      const current = await currentRes.json();
+
+      const forecastRes = await fetch(
+        `https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${API_KEY}&units=metric&lang=ko`
+      );
+      const forecast = await forecastRes.json();
+
+      renderWeather(current, forecast);
+    } catch (err) {
+      result.innerHTML = '<div class="error-msg">날씨 정보를 불러올 수 없습니다.</div>';
+    }
+  }
+
+  function renderWeather(current, forecast) {
+    const icon = WEATHER_ICONS[current.weather[0].icon] || '🌡️';
+    const now = new Date();
+    const dateStr = now.getFullYear() + '년 ' + (now.getMonth()+1) + '월 ' + now.getDate() + '일 ' + DAYS[now.getDay()] + '요일';
+
+    // Hourly forecast (next 12 hours, 3h intervals)
+    const hourlyHtml = forecast.list.slice(0, 8).map(item => {
+      const d = new Date(item.dt * 1000);
+      const h = d.getHours();
+      const ic = WEATHER_ICONS[item.weather[0].icon] || '🌡️';
+      return `
+        <div class="forecast-item">
+          <div class="time">${h}시</div>
+          <div class="icon">${ic}</div>
+          <div class="temp">${Math.round(item.main.temp)}°</div>
+        </div>`;
+    }).join('');
+
+    // Daily forecast (group by date)
+    const dailyMap = {};
+    forecast.list.forEach(item => {
+      const dateKey = item.dt_txt.split(' ')[0];
+      if (!dailyMap[dateKey]) dailyMap[dateKey] = { temps: [], icons: [] };
+      dailyMap[dateKey].temps.push(item.main.temp);
+      dailyMap[dateKey].icons.push(item.weather[0].icon);
+    });
+
+    const dailyHtml = Object.keys(dailyMap).slice(0, 5).map(dateKey => {
+      const d = new Date(dateKey);
+      const day = DAYS[d.getDay()];
+      const temps = dailyMap[dateKey].temps;
+      const midIcon = dailyMap[dateKey].icons[Math.floor(dailyMap[dateKey].icons.length / 2)];
+      const ic = WEATHER_ICONS[midIcon] || '🌡️';
+      return `
+        <div class="daily-row">
+          <span class="daily-day">${day}</span>
+          <span class="daily-icon">${ic}</span>
+          <span class="daily-temps">
+            <span class="daily-high">${Math.round(Math.max(...temps))}°</span>
+            <span class="daily-low">${Math.round(Math.min(...temps))}°</span>
+          </span>
+        </div>`;
+    }).join('');
+
+    document.getElementById('weatherResult').innerHTML = `
+      <div class="weather-card">
+        <p class="weather-city">${current.name}, ${current.sys.country}</p>
+        <p class="weather-date">${dateStr}</p>
+        <div class="weather-main">
+          <div class="weather-temp">${Math.round(current.main.temp)}<span>°C</span></div>
+          <div class="weather-icon">${icon}</div>
+        </div>
+        <p class="weather-desc">${current.weather[0].description}</p>
+        <div class="weather-details">
+          <div class="weather-detail-item">
+            <div class="label">체감온도</div>
+            <div class="value">${Math.round(current.main.feels_like)}°</div>
+          </div>
+          <div class="weather-detail-item">
+            <div class="label">습도</div>
+            <div class="value">${current.main.humidity}%</div>
+          </div>
+          <div class="weather-detail-item">
+            <div class="label">바람</div>
+            <div class="value">${current.wind.speed}m/s</div>
+          </div>
+        </div>
+      </div>
+
+      <p class="forecast-title">시간별 예보</p>
+      <div class="forecast-list">${hourlyHtml}</div>
+
+      <p class="forecast-title">주간 예보</p>
+      <div class="daily-card">${dailyHtml}</div>
+    `;
+  }
+
+  // 기본으로 서울 날씨 표시
+  loadWeather('Seoul');
+</script>
+
+</body>
+</html>
