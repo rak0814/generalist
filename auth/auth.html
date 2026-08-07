@@ -253,6 +253,38 @@
 
     .hidden { display: none !important; }
 
+    /* 약관 동의 */
+    .agree-section {
+      margin-bottom: 16px;
+    }
+
+    .agree-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .agree-row input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #6366f1;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .agree-row label {
+      font-size: 12px;
+      color: #555;
+      cursor: pointer;
+      line-height: 1.4;
+    }
+
+    .agree-row a {
+      color: #6366f1;
+      text-decoration: underline;
+    }
+
     /* 비밀번호 변경 */
     .pw-change-section {
       border-top: 1px solid #eee;
@@ -422,6 +454,16 @@
         <label>비밀번호 확인</label>
         <input type="password" id="confirmPassword" placeholder="비밀번호를 다시 입력하세요" autocomplete="new-password">
       </div>
+      <div class="agree-section hidden" id="agreeSection">
+        <div class="agree-row">
+          <input type="checkbox" id="agreeTerms">
+          <label for="agreeTerms"><a href="../legal/terms.html" target="_blank">이용약관</a>에 동의합니다 (필수)</label>
+        </div>
+        <div class="agree-row">
+          <input type="checkbox" id="agreePrivacy">
+          <label for="agreePrivacy"><a href="../legal/privacy.html" target="_blank">개인정보처리방침</a>에 동의합니다 (필수)</label>
+        </div>
+      </div>
       <button type="submit" class="submit-btn" id="submitBtn">로그인</button>
     </form>
 
@@ -503,6 +545,7 @@
       document.getElementById('passwordGroup').style.display = 'none';
       document.getElementById('confirmGroup').classList.add('hidden');
       document.getElementById('nicknameGroup').style.display = 'none';
+      document.getElementById('agreeSection').classList.add('hidden');
       document.getElementById('submitBtn').textContent = '비밀번호 재설정 메일 보내기';
       document.getElementById('forgotBtn').textContent = '로그인으로 돌아가기';
       document.getElementById('forgotBtn').onclick = function() { switchTab('login'); };
@@ -521,6 +564,7 @@
       document.getElementById('tabSignup').classList.toggle('active', tab === 'signup');
       document.getElementById('confirmGroup').classList.toggle('hidden', tab === 'login');
       document.getElementById('nicknameGroup').style.display = tab === 'signup' ? 'block' : 'none';
+      document.getElementById('agreeSection').classList.toggle('hidden', tab !== 'signup');
       document.getElementById('submitBtn').textContent = tab === 'login' ? '로그인' : '회원가입';
     }
   }
@@ -583,6 +627,11 @@
           showMessage('비밀번호 재설정 메일을 보냈습니다.\n이메일을 확인하세요.', 'success');
         }
       } else if (currentTab === 'signup') {
+        if (!document.getElementById('agreeTerms').checked || !document.getElementById('agreePrivacy').checked) {
+          showMessage('이용약관과 개인정보처리방침에 모두 동의해주세요.', 'error');
+          btn.disabled = false;
+          return;
+        }
         const confirm = document.getElementById('confirmPassword').value;
         if (password !== confirm) {
           showMessage('비밀번호가 일치하지 않습니다.', 'error');
