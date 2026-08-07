@@ -565,7 +565,10 @@
 
   // ── Logout ──
   async function handleLogout() {
-    if (sb) await sb.auth.signOut();
+    if (sb) {
+      await sb.auth.signOut({ scope: 'local' });
+      localStorage.clear();
+    }
     document.getElementById('menuName').textContent = '게스트';
     document.getElementById('menuEmail').textContent = '로그인해주세요';
     setAuthBtn(false);
