@@ -402,7 +402,8 @@
 
     try {
       if (currentTab === 'forgot') {
-        const { error } = await sb.auth.resetPasswordForEmail(email);
+        const redirectUrl = window.location.origin + '/reset-password.html';
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: redirectUrl });
         if (error) {
           showMessage(error.message, 'error');
         } else {
