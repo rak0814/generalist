@@ -650,12 +650,9 @@
       sb.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
           currentUser = session.user;
-          const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
-          document.getElementById('userBadge').textContent = nickname;
-          document.getElementById('userBadge').style.display = 'inline';
         } else {
           currentUser = null;
-          }
+        }
       });
     } catch (err) {
       console.error('Supabase 초기화 실패:', err);
