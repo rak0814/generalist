@@ -637,12 +637,19 @@
         document.getElementById('menuEmail').textContent = user.email;
         setAuthBtn(true);
         document.getElementById('menuLogoutSection').style.display = 'block';
+        if (user.email === ADMIN_EMAIL) {
+          document.getElementById('adminStats').classList.remove('hidden');
+          loadAdminStats();
+        } else {
+          document.getElementById('adminStats').classList.add('hidden');
+        }
         if (e.data.action === 'login') goHome();
       } else {
         document.getElementById('menuName').textContent = '게스트';
         document.getElementById('menuEmail').textContent = '로그인해주세요';
         setAuthBtn(false);
         document.getElementById('menuLogoutSection').style.display = 'none';
+        document.getElementById('adminStats').classList.add('hidden');
       }
     }
     if (e.data && e.data.type === 'go-to-auth') {
@@ -672,6 +679,7 @@
     document.getElementById('menuEmail').textContent = '로그인해주세요';
     setAuthBtn(false);
     document.getElementById('menuLogoutSection').style.display = 'none';
+    document.getElementById('adminStats').classList.add('hidden');
     goHome();
   }
 
