@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>게시판</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+    }
+
+    /* ── Top Bar ── */
+    .top-bar {
+      background: #fff;
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #eee;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    .top-bar h1 {
+      font-size: 17px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .top-bar-btn {
+      padding: 8px 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .top-bar-btn:hover { opacity: 0.85; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+    }
+
+    .btn-back {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .top-bar-right {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .user-badge {
+      font-size: 12px;
+      color: #6366f1;
+      font-weight: 600;
+      background: #eef2ff;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+
+    /* ── Login Prompt ── */
+    .login-prompt {
+      text-align: center;
+      padding: 80px 20px;
+    }
+
+    .login-prompt .icon { font-size: 48px; margin-bottom: 16px; }
+
+    .login-prompt h2 {
+      font-size: 18px;
+      color: #333;
+      margin-bottom: 8px;
+    }
+
+    .login-prompt p {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    .login-prompt-btn {
+      display: inline-block;
+      padding: 12px 32px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* ── Post List ── */
+    .post-list {
+      padding: 12px 16px;
+    }
+
+    .post-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 10px;
+      cursor: pointer;
+      transition: box-shadow 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+
+    .post-item:hover {
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .post-item-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 6px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .post-item-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #999;
+    }
+
+    .post-item-author {
+      font-weight: 500;
+      color: #666;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #aaa;
+    }
+
+    .empty-state .icon { font-size: 40px; margin-bottom: 12px; }
+    .empty-state p { font-size: 14px; }
+
+    /* ── Post Form ── */
+    .post-form {
+      padding: 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 6px;
+    }
+
+    .form-group input,
+    .form-group textarea {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 10px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      background: #fff;
+      font-family: inherit;
+    }
+
+    .form-group input:focus,
+    .form-group textarea:focus {
+      border-color: #6366f1;
+    }
+
+    .form-group textarea {
+      min-height: 200px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    .form-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .form-actions button {
+      flex: 1;
+      padding: 14px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .form-actions button:hover { opacity: 0.85; }
+
+    .btn-cancel {
+      background: #f0f0f0;
+      color: #333;
+    }
+
+    .btn-submit {
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+    }
+
+    /* ── Post Detail ── */
+    .post-detail {
+      padding: 20px;
+    }
+
+    .detail-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #111;
+      margin-bottom: 12px;
+      line-height: 1.4;
+    }
+
+    .detail-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #999;
+      padding-bottom: 16px;
+      margin-bottom: 20px;
+      border-bottom: 1px solid #eee;
+    }
+
+    .detail-author {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .detail-content {
+      font-size: 15px;
+      line-height: 1.8;
+      color: #333;
+      white-space: pre-wrap;
+      word-break: break-word;
+      min-height: 120px;
+    }
+
+    .detail-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 32px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .detail-actions button {
+      padding: 10px 20px;
+      border: none;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .btn-edit {
+      background: #eef2ff;
+      color: #6366f1;
+    }
+
+    .btn-delete {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    /* ── Loading ── */
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #aaa;
+      font-size: 14px;
+    }
+
+    /* ── View management ── */
+    .view { display: none; }
+    .view.active { display: block; }
+
+    /* ── Confirm Modal ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+
+    .modal-overlay.hidden { display: none; }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      padding: 28px 24px;
+      max-width: 320px;
+      width: 100%;
+      text-align: center;
+    }
+
+    .modal-box p {
+      font-size: 15px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .modal-btns {
+      display: flex;
+      gap: 10px;
+    }
+
+    .modal-btns button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .modal-cancel { background: #f0f0f0; color: #333; }
+    .modal-confirm { background: #dc2626; color: #fff; }
+  </style>
+</head>
+<body>
+
+<!-- ============ LIST VIEW ============ -->
+<div class="view active" id="viewList">
+  <div class="top-bar">
+    <h1>&#128221; 게시판</h1>
+    <div class="top-bar-right">
+      <button class="top-bar-btn btn-primary" id="writeBtn" onclick="showWrite()">글쓰기</button>
+    </div>
+  </div>
+
+  <div id="postListContainer">
+    <div class="loading">불러오는 중...</div>
+  </div>
+</div>
+
+<!-- ============ WRITE VIEW ============ -->
+<div class="view" id="viewWrite">
+  <div class="top-bar">
+    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 뒤로</button>
+    <h1>새 글 작성</h1>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="post-form">
+    <div class="form-group">
+      <label>제목</label>
+      <input type="text" id="writeTitle" placeholder="제목을 입력하세요" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label>내용</label>
+      <textarea id="writeContent" placeholder="내용을 입력하세요"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="showList()">취소</button>
+      <button class="btn-submit" onclick="submitPost()">등록</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DETAIL VIEW ============ -->
+<div class="view" id="viewDetail">
+  <div class="top-bar">
+    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 목록</button>
+    <h1>게시글</h1>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="post-detail">
+    <h2 class="detail-title" id="detailTitle"></h2>
+    <div class="detail-meta">
+      <span class="detail-author" id="detailAuthor"></span>
+      <span id="detailDate"></span>
+    </div>
+    <div class="detail-content" id="detailContent"></div>
+    <div class="detail-actions" id="detailActions" style="display:none;">
+      <button class="btn-edit" onclick="showEdit()">&#9998; 수정</button>
+      <button class="btn-delete" onclick="confirmDelete()">&#128465; 삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ EDIT VIEW ============ -->
+<div class="view" id="viewEdit">
+  <div class="top-bar">
+    <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)">&#8592; 뒤로</button>
+    <h1>글 수정</h1>
+    <div style="width:60px;"></div>
+  </div>
+
+  <div class="post-form">
+    <div class="form-group">
+      <label>제목</label>
+      <input type="text" id="editTitle" placeholder="제목을 입력하세요" maxlength="100">
+    </div>
+    <div class="form-group">
+      <label>내용</label>
+      <textarea id="editContent" placeholder="내용을 입력하세요"></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn-cancel" onclick="showDetail(currentPost)">취소</button>
+      <button class="btn-submit" onclick="updatePost()">수정 완료</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DELETE CONFIRM MODAL ============ -->
+<div class="modal-overlay hidden" id="deleteModal">
+  <div class="modal-box">
+    <p>이 게시글을 삭제하시겠습니까?</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeDeleteModal()">취소</button>
+      <button class="modal-confirm" onclick="deletePost()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  let sb = null;
+  let currentUser = null;
+  let currentPost = null;
+  let posts = [];
+
+  // ── UI 함수 (Supabase 없이도 동작) ──
+  function switchView(viewId) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.getElementById(viewId).classList.add('active');
+  }
+
+  function showList() {
+    switchView('viewList');
+    loadPosts();
+  }
+
+  function showWrite() {
+    if (!currentUser) {
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'go-to-auth' }, '*');
+      }
+      return;
+    }
+    document.getElementById('writeTitle').value = '';
+    document.getElementById('writeContent').value = '';
+    switchView('viewWrite');
+    document.getElementById('writeTitle').focus();
+  }
+
+  function showDetail(post) {
+    currentPost = post;
+    document.getElementById('detailTitle').textContent = post.title;
+    document.getElementById('detailContent').textContent = post.content;
+
+    const nickname = post.user_nickname || post.user_email.split('@')[0];
+    document.getElementById('detailAuthor').textContent = nickname;
+    document.getElementById('detailDate').textContent = formatDate(post.created_at);
+
+    const isAuthor = currentUser && currentUser.id === post.user_id;
+    document.getElementById('detailActions').style.display = isAuthor ? 'flex' : 'none';
+
+    switchView('viewDetail');
+  }
+
+  function showEdit() {
+    if (!currentPost) return;
+    document.getElementById('editTitle').value = currentPost.title;
+    document.getElementById('editContent').value = currentPost.content;
+    switchView('viewEdit');
+    document.getElementById('editTitle').focus();
+  }
+
+  function formatDate(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+
+    if (diff < 60000) return '방금 전';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '분 전';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '시간 전';
+    if (diff < 604800000) return Math.floor(diff / 86400000) + '일 전';
+
+    return d.getFullYear() + '.' + (d.getMonth()+1) + '.' + d.getDate();
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  function confirmDelete() {
+    document.getElementById('deleteModal').classList.remove('hidden');
+  }
+
+  function closeDeleteModal() {
+    document.getElementById('deleteModal').classList.add('hidden');
+  }
+
+  // ── Supabase 연동 함수 ──
+  async function loadPosts() {
+    const container = document.getElementById('postListContainer');
+    if (!sb) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>서버에 연결할 수 없습니다.</p></div>';
+      return;
+    }
+    container.innerHTML = '<div class="loading">불러오는 중...</div>';
+
+    const { data, error } = await sb
+      .from('posts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">&#9888;</div><p>게시글을 불러올 수 없습니다.</p></div>';
+      return;
+    }
+
+    posts = data || [];
+
+    if (posts.length === 0) {
+      container.innerHTML = '<div class="empty-state"><div class="icon">&#128196;</div><p>아직 게시글이 없습니다.<br>첫 번째 글을 작성해보세요!</p></div>';
+      return;
+    }
+
+    container.innerHTML = '<div class="post-list">' + posts.map(post => {
+      const nickname = post.user_nickname || post.user_email.split('@')[0];
+      return `
+        <div class="post-item" onclick='showDetail(${JSON.stringify(post).replace(/'/g, "&#39;")})'>
+          <div class="post-item-title">${escapeHtml(post.title)}</div>
+          <div class="post-item-meta">
+            <span class="post-item-author">${escapeHtml(nickname)}</span>
+            <span>${formatDate(post.created_at)}</span>
+          </div>
+        </div>`;
+    }).join('') + '</div>';
+  }
+
+  async function submitPost() {
+    if (!sb) return;
+    const title = document.getElementById('writeTitle').value.trim();
+    const content = document.getElementById('writeContent').value.trim();
+
+    if (!title) return alert('제목을 입력하세요.');
+    if (!content) return alert('내용을 입력하세요.');
+
+    const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
+
+    const { error } = await sb.from('posts').insert({
+      title,
+      content,
+      user_id: currentUser.id,
+      user_email: currentUser.email,
+      user_nickname: nickname
+    });
+
+    if (error) {
+      alert('등록에 실패했습니다: ' + error.message);
+      return;
+    }
+
+    showList();
+  }
+
+  async function updatePost() {
+    if (!sb) return;
+    const title = document.getElementById('editTitle').value.trim();
+    const content = document.getElementById('editContent').value.trim();
+
+    if (!title) return alert('제목을 입력하세요.');
+    if (!content) return alert('내용을 입력하세요.');
+
+    const { error } = await sb
+      .from('posts')
+      .update({ title, content })
+      .eq('id', currentPost.id);
+
+    if (error) {
+      alert('수정에 실패했습니다: ' + error.message);
+      return;
+    }
+
+    currentPost.title = title;
+    currentPost.content = content;
+    showDetail(currentPost);
+  }
+
+  async function deletePost() {
+    if (!sb) return;
+    closeDeleteModal();
+
+    const { error } = await sb
+      .from('posts')
+      .delete()
+      .eq('id', currentPost.id);
+
+    if (error) {
+      alert('삭제에 실패했습니다: ' + error.message);
+      return;
+    }
+
+    currentPost = null;
+    showList();
+  }
+
+  // ── Supabase 초기화 ──
+  async function init() {
+    try {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      const { data: { session } } = await sb.auth.getSession();
+
+      if (session?.user) {
+        currentUser = session.user;
+        const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
+      }
+
+      loadPosts();
+
+      sb.auth.onAuthStateChange((event, session) => {
+        if (session?.user) {
+          currentUser = session.user;
+          const nickname = currentUser.user_metadata?.nickname || currentUser.email.split('@')[0];
+          document.getElementById('userBadge').textContent = nickname;
+          document.getElementById('userBadge').style.display = 'inline';
+        } else {
+          currentUser = null;
+          }
+      });
+    } catch (err) {
+      console.error('Supabase 초기화 실패:', err);
+    }
+  }
+
+  init();
+</script>
+
+</body>
+</html>

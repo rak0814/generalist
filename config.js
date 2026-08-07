@@ -1,0 +1,2 @@
+const SUPABASE_URL = 'https://cgfvuxuisfazhianmyph.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNnZnZ1eHVpc2ZhemhpYW5teXBoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYwNDM5NTYsImV4cCI6MjEwMTYxOTk1Nn0.ASdzicq_jg8zkVYM8Oq_wGuQ5XCZcDDjp9v10LfpMHs';

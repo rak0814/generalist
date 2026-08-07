@@ -8,6 +8,8 @@
   <meta name="theme-color" content="#111111">
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -336,6 +338,7 @@
       <span class="title">Generalist</span>
     </div>
     <div class="header-right">
+      <span id="headerGreeting" style="font-size:13px;color:#ccc;display:none;align-items:center;"></span>
       <button class="header-btn" onclick="openMenu()" title="메뉴">&#9776;</button>
     </div>
   </div>
@@ -351,6 +354,14 @@
         <div class="app-icon" onclick="loadPage('lotto.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">&#127922;</div>
           <span class="icon-label">로또</span>
+        </div>
+      </div>
+
+      <p class="section-title">Community</p>
+      <div class="app-grid">
+        <div class="app-icon" onclick="loadPage('board.html','board')">
+          <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">&#128221;</div>
+          <span class="icon-label">게시판</span>
         </div>
       </div>
 
@@ -402,9 +413,9 @@
       <span class="nav-icon">&#128172;</span>
       <span>AI 채팅</span>
     </button>
-    <button class="nav-item" data-nav="settings" onclick="loadPage('settings.html','settings')">
-      <span class="nav-icon">&#9881;&#65039;</span>
-      <span>설정</span>
+    <button class="nav-item" data-nav="board" onclick="loadPage('board.html','board')">
+      <span class="nav-icon">&#128221;</span>
+      <span>게시판</span>
     </button>
   </div>
 
@@ -415,8 +426,8 @@
     <div class="menu-panel">
       <div class="menu-header">
         <button class="menu-close" onclick="closeMenu()">&#10005;</button>
-        <p class="name">김경락</p>
-        <p class="email">rak0418@naver.com</p>
+        <p class="name" id="menuName">게스트</p>
+        <p class="email" id="menuEmail">로그인해주세요</p>
       </div>
 
       <div class="menu-section">
@@ -450,6 +461,12 @@
           <span class="mi-icon">&#128712;</span> 앱 정보
         </div>
       </div>
+
+      <div class="menu-section" id="menuLogoutSection" style="display:none;">
+        <div class="menu-item" onclick="handleLogout();" style="color:#dc2626;">
+          <span class="mi-icon" style="opacity:1;">&#128682;</span> 로그아웃
+        </div>
+      </div>
     </div>
   </div>
 
@@ -459,6 +476,24 @@
   const homePage = document.getElementById('homePage');
   const pageFrame = document.getElementById('pageFrame');
   let currentNav = 'home';
+  let sb = null;
+
+  // ── Supabase 초기화 ──
+  try {
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        const name = session.user.user_metadata?.nickname || session.user.email.split('@')[0];
+        document.getElementById('menuName').textContent = name;
+        document.getElementById('menuEmail').textContent = session.user.email;
+        document.getElementById('headerGreeting').textContent = name + '님 안녕하세요';
+        document.getElementById('headerGreeting').style.display = 'flex';
+        document.getElementById('menuLogoutSection').style.display = 'block';
+      }
+    });
+  } catch (err) {
+    console.error('Supabase 초기화 실패:', err);
+  }
 
   // ── Load sub-page in iframe ──
   function loadPage(url, nav) {
@@ -492,6 +527,41 @@
 
   function closeMenu() {
     document.getElementById('menuOverlay').classList.remove('open');
+  }
+
+  // ── Auth state from iframe ──
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'auth-state-change') {
+      const user = e.data.user;
+      if (user) {
+        const name = user.nickname || user.email.split('@')[0];
+        document.getElementById('menuName').textContent = name;
+        document.getElementById('menuEmail').textContent = user.email;
+        document.getElementById('headerGreeting').textContent = name + '님 안녕하세요';
+        document.getElementById('headerGreeting').style.display = 'flex';
+        document.getElementById('menuLogoutSection').style.display = 'block';
+        if (e.data.action === 'login') goHome();
+      } else {
+        document.getElementById('menuName').textContent = '게스트';
+        document.getElementById('menuEmail').textContent = '로그인해주세요';
+        document.getElementById('headerGreeting').style.display = 'none';
+        document.getElementById('menuLogoutSection').style.display = 'none';
+      }
+    }
+    if (e.data && e.data.type === 'go-to-auth') {
+      loadPage('auth.html', 'auth');
+    }
+  });
+
+  // ── Logout ──
+  async function handleLogout() {
+    closeMenu();
+    if (sb) await sb.auth.signOut();
+    document.getElementById('menuName').textContent = '게스트';
+    document.getElementById('menuEmail').textContent = '로그인해주세요';
+    document.getElementById('headerGreeting').style.display = 'none';
+    document.getElementById('menuLogoutSection').style.display = 'none';
+    goHome();
   }
 
   // ── Service Worker ──
