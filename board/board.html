@@ -276,28 +276,40 @@
       margin-bottom: 16px;
     }
 
+    .comment-form-fixed {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-top: 1px solid #eee;
+      padding: 10px 12px;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      z-index: 20;
+    }
+
     .comment-form {
       display: flex;
       gap: 8px;
-      margin-bottom: 20px;
     }
 
     .comment-form input {
       flex: 1;
-      padding: 10px 14px;
+      padding: 12px 16px;
       border: 1.5px solid #e0e0e0;
-      border-radius: 10px;
+      border-radius: 24px;
       font-size: 13px;
       outline: none;
       font-family: inherit;
+      background: #fafafa;
     }
 
-    .comment-form input:focus { border-color: #6366f1; }
+    .comment-form input:focus { border-color: #6366f1; background: #fff; }
 
     .comment-form button {
-      padding: 10px 18px;
+      padding: 12px 18px;
       border: none;
-      border-radius: 10px;
+      border-radius: 24px;
       background: #6366f1;
       color: #fff;
       font-size: 13px;
@@ -480,11 +492,11 @@
     <!-- Comments -->
     <div class="comments-section">
       <p class="comments-title" id="commentsTitle">댓글 0</p>
-
-      <div id="commentFormArea"></div>
       <div id="commentsList"></div>
+      <div style="height:70px;"></div>
     </div>
   </div>
+  <div id="commentFormArea"></div>
 </div>
 
 <!-- ============ EDIT VIEW ============ -->
@@ -541,6 +553,7 @@
   }
 
   function showList() {
+    document.getElementById('commentFormArea').innerHTML = '';
     switchView('viewList');
     loadPosts();
   }
@@ -785,12 +798,14 @@
     const area = document.getElementById('commentFormArea');
     if (currentUser) {
       area.innerHTML = `
-        <div class="comment-form">
-          <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
-          <button onclick="submitComment()">등록</button>
+        <div class="comment-form-fixed">
+          <div class="comment-form">
+            <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
+            <button onclick="submitComment()">등록</button>
+          </div>
         </div>`;
     } else {
-      area.innerHTML = '<p class="comment-login-msg">댓글을 작성하려면 로그인하세요.</p>';
+      area.innerHTML = '';
     }
   }
 
