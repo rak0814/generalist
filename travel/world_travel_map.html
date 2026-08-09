@@ -1650,9 +1650,9 @@ async function selectCountry(name) {
       <div style="display:flex;flex-direction:column;gap:10px;">
         ${data.itinerary.map((it, idx) => `
           <div class="itinerary-card">
-            <div class="itinerary-title" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+            <div class="itinerary-title" onclick="var body=this.nextElementSibling;var span=this.querySelector('span');if(body.style.display==='none'){body.style.display='block';span.textContent='닫기 ▴';}else{body.style.display='none';span.textContent='열기 ▾';}">
               ${it.title}
-              <span style="font-size:11px;color:rgba(255,255,255,0.3);">펼치기 ▾</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.3);">${idx > 0 ? '열기 ▾' : '닫기 ▴'}</span>
             </div>
             <div class="itinerary-body" ${idx > 0 ? 'style="display:none;"' : ''}>
               ${it.days.map(d => {
