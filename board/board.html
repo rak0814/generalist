@@ -217,28 +217,72 @@
     .btn-submit { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
 
     /* ── Post Detail ── */
-    .post-detail { padding: 20px; }
-
-    .detail-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #111;
-      margin-bottom: 12px;
-      line-height: 1.4;
+    .post-detail {
+      padding: 0;
+      background: #fff;
     }
 
-    .detail-meta {
+    .detail-header {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-size: 13px;
-      color: #999;
-      padding-bottom: 16px;
-      margin-bottom: 20px;
-      border-bottom: 1px solid #eee;
+      padding: 16px 20px;
+      border-bottom: 1px solid #f0f0f0;
     }
 
-    .detail-author { font-weight: 600; color: #555; }
+    .detail-avatar {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .detail-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .detail-author {
+      font-size: 14px;
+      font-weight: 600;
+      color: #333;
+    }
+
+    .detail-date {
+      font-size: 12px;
+      color: #aaa;
+      margin-top: 1px;
+    }
+
+    .detail-actions-top {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .detail-actions-top button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .detail-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111;
+      line-height: 1.4;
+      padding: 18px 20px 0;
+    }
 
     .detail-content {
       font-size: 15px;
@@ -246,25 +290,8 @@
       color: #333;
       white-space: pre-wrap;
       word-break: break-word;
+      padding: 12px 20px 20px;
       min-height: 80px;
-    }
-
-    .detail-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 32px;
-      padding-top: 20px;
-      border-top: 1px solid #eee;
-    }
-
-    .detail-actions button {
-      padding: 10px 20px;
-      border: none;
-      border-radius: 8px;
-      font-size: 13px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: opacity 0.2s;
     }
 
     .btn-edit { background: #eef2ff; color: #6366f1; }
@@ -272,9 +299,8 @@
 
     /* ── Comments ── */
     .comments-section {
-      margin-top: 32px;
-      border-top: 1px solid #eee;
-      padding-top: 20px;
+      border-top: 8px solid #f0f0f0;
+      padding: 20px;
     }
 
     .comments-title {
@@ -511,16 +537,19 @@
   </div>
 
   <div class="post-detail" id="postDetailArea">
+    <div class="detail-header">
+      <div class="detail-avatar" id="detailAvatar"></div>
+      <div class="detail-info">
+        <p class="detail-author" id="detailAuthor"></p>
+        <p class="detail-date" id="detailDate"></p>
+      </div>
+      <div class="detail-actions-top" id="detailActions" style="display:none;">
+        <button class="btn-edit" onclick="showEdit()">수정</button>
+        <button class="btn-delete" onclick="confirmDelete()">삭제</button>
+      </div>
+    </div>
     <h2 class="detail-title" id="detailTitle"></h2>
-    <div class="detail-meta">
-      <span class="detail-author" id="detailAuthor"></span>
-      <span id="detailDate"></span>
-    </div>
     <div class="detail-content" id="detailContent"></div>
-    <div class="detail-actions" id="detailActions" style="display:none;">
-      <button class="btn-edit" onclick="showEdit()">&#9998; 수정</button>
-      <button class="btn-delete" onclick="confirmDelete()">&#128465; 삭제</button>
-    </div>
 
     <!-- Comments -->
     <div class="comments-section">
@@ -610,6 +639,7 @@
     document.getElementById('detailContent').textContent = post.content;
 
     const nickname = post.user_nickname || post.user_email.split('@')[0];
+    document.getElementById('detailAvatar').textContent = nickname.charAt(0).toUpperCase();
     document.getElementById('detailAuthor').textContent = nickname;
     document.getElementById('detailDate').textContent = formatDate(post.created_at);
 
