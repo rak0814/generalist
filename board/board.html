@@ -432,6 +432,21 @@
 
     .comment-delete:hover { color: #dc2626; }
 
+    .comment-like-btn {
+      background: none;
+      border: none;
+      font-size: 12px;
+      color: #ccc;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      margin-top: 6px;
+    }
+
+    .comment-like-btn.liked { color: #f43f5e; }
+    .comment-like-btn:hover { color: #f43f5e; }
+
     .comment-login-msg {
       font-size: 13px;
       color: #999;
@@ -762,6 +777,30 @@
     loadLikes(postId);
   }
 
+  async function toggleCommentLike(commentId, btnEl) {
+    if (!sb || !currentUser) {
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'go-to-auth' }, '*');
+      }
+      return;
+    }
+
+    if (btnEl.classList.contains('liked')) {
+      await sb.from('comment_likes').delete()
+        .eq('comment_id', commentId)
+        .eq('user_id', currentUser.id);
+      btnEl.classList.remove('liked');
+      btnEl.innerHTML = '&#9825; <span>' + Math.max(0, parseInt(btnEl.querySelector('span').textContent) - 1) + '</span>';
+    } else {
+      await sb.from('comment_likes').insert({
+        comment_id: commentId,
+        user_id: currentUser.id
+      });
+      btnEl.classList.add('liked');
+      btnEl.innerHTML = '&#9829; <span>' + (parseInt(btnEl.querySelector('span').textContent) + 1) + '</span>';
+    }
+  }
+
   function showEdit() {
     if (!currentPost) return;
     document.getElementById('editTitle').value = currentPost.title;
@@ -1037,6 +1076,7 @@
       return;
     }
 
+    // 먼저 댓글 렌더링
     container.innerHTML = comments.map(c => {
       const nickname = c.user_nickname || c.user_email.split('@')[0];
       const isAuthor = currentUser && currentUser.id === c.user_id;
@@ -1050,8 +1090,36 @@
             </span>
           </div>
           <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
+          <button class="comment-like-btn" id="cl-${c.id}" onclick="toggleCommentLike('${c.id}', this)">
+            &#9825; <span>0</span>
+          </button>
         </div>`;
     }).join('');
+
+    // 댓글 좋아요 비동기 로드
+    try {
+      const commentIds = comments.map(c => c.id);
+      const { data: clData } = await sb
+        .from('comment_likes')
+        .select('comment_id, user_id')
+        .in('comment_id', commentIds);
+      if (clData) {
+        const cLikeCounts = {};
+        const myCommentLikes = {};
+        clData.forEach(l => {
+          cLikeCounts[l.comment_id] = (cLikeCounts[l.comment_id] || 0) + 1;
+          if (currentUser && l.user_id === currentUser.id) myCommentLikes[l.comment_id] = true;
+        });
+        commentIds.forEach(cid => {
+          const btn = document.getElementById('cl-' + cid);
+          if (!btn) return;
+          const count = cLikeCounts[cid] || 0;
+          const liked = myCommentLikes[cid] || false;
+          if (liked) btn.classList.add('liked');
+          btn.innerHTML = (liked ? '&#9829;' : '&#9825;') + ' <span>' + count + '</span>';
+        });
+      }
+    } catch {}
   }
 
   async function submitComment() {
