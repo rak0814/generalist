@@ -191,7 +191,14 @@
       line-height: 1.6;
     }
 
-    .form-actions { display: flex; gap: 10px; }
+    .form-actions {
+      display: flex;
+      gap: 10px;
+      padding: 12px 20px;
+      background: #fff;
+      border-top: 1px solid #eee;
+      flex-shrink: 0;
+    }
 
     .form-actions button {
       flex: 1;
@@ -487,10 +494,10 @@
       <label>내용</label>
       <textarea id="writeContent" placeholder="내용을 입력하세요"></textarea>
     </div>
-    <div class="form-actions">
-      <button class="btn-cancel" onclick="showList()">취소</button>
-      <button class="btn-submit" onclick="submitPost()">등록</button>
-    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-cancel" onclick="showList()">취소</button>
+    <button class="btn-submit" onclick="submitPost()">등록</button>
   </div>
 </div>
 
@@ -541,10 +548,10 @@
       <label>내용</label>
       <textarea id="editContent" placeholder="내용을 입력하세요"></textarea>
     </div>
-    <div class="form-actions">
-      <button class="btn-cancel" onclick="showDetail(currentPost)">취소</button>
-      <button class="btn-submit" onclick="updatePost()">수정 완료</button>
-    </div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-cancel" onclick="showDetail(currentPost)">취소</button>
+    <button class="btn-submit" onclick="updatePost()">수정 완료</button>
   </div>
 </div>
 
