@@ -386,7 +386,8 @@
       flex-shrink: 0;
     }
     .view.fixed-layout .post-detail,
-    .view.fixed-layout #postListContainer {
+    .view.fixed-layout #postListContainer,
+    .view.fixed-layout .post-form {
       flex: 1;
       overflow-y: auto;
     }
@@ -470,7 +471,7 @@
 </div>
 
 <!-- ============ WRITE VIEW ============ -->
-<div class="view" id="viewWrite">
+<div class="view fixed-layout" id="viewWrite">
   <div class="top-bar">
     <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 뒤로</button>
     <h1>새 글 작성</h1>
@@ -524,7 +525,7 @@
 </div>
 
 <!-- ============ EDIT VIEW ============ -->
-<div class="view" id="viewEdit">
+<div class="view fixed-layout" id="viewEdit">
   <div class="top-bar">
     <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)">&#8592; 뒤로</button>
     <h1>글 수정</h1>
