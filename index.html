@@ -286,7 +286,14 @@
     .menu-header {
       background: #111;
       color: #fff;
-      padding: 28px 24px;
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .menu-header-info {
+      flex: 1;
     }
 
     .menu-header .name {
@@ -329,9 +336,6 @@
     .menu-item .mi-icon { font-size: 18px; width: 24px; text-align: center; opacity: 0.6; }
 
     .menu-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
       width: 32px;
       height: 32px;
       border: none;
@@ -343,6 +347,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
+      flex-shrink: 0;
     }
 
     /* ── Admin Stats ── */
@@ -543,9 +548,11 @@
     <div class="menu-backdrop" onclick="closeMenu()"></div>
     <div class="menu-panel">
       <div class="menu-header">
+        <div class="menu-header-info">
+          <p class="name" id="menuName">게스트</p>
+          <p class="email" id="menuEmail">로그인해주세요</p>
+        </div>
         <button class="menu-close" onclick="closeMenu()">&#10005;</button>
-        <p class="name" id="menuName">게스트</p>
-        <p class="email" id="menuEmail">로그인해주세요</p>
       </div>
 
       <div class="menu-section">
