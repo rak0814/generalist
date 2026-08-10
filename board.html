@@ -1076,30 +1076,10 @@
       return;
     }
 
-    // 댓글 좋아요 조회
-    const commentIds = comments.map(c => c.id);
-    const cLikeCounts = {};
-    const myCommentLikes = {};
-    if (commentIds.length > 0) {
-      const { data: clData } = await sb
-        .from('comment_likes')
-        .select('comment_id, user_id')
-        .in('comment_id', commentIds);
-      if (clData) {
-        clData.forEach(l => {
-          cLikeCounts[l.comment_id] = (cLikeCounts[l.comment_id] || 0) + 1;
-          if (currentUser && l.user_id === currentUser.id) {
-            myCommentLikes[l.comment_id] = true;
-          }
-        });
-      }
-    }
-
+    // 먼저 댓글 렌더링
     container.innerHTML = comments.map(c => {
       const nickname = c.user_nickname || c.user_email.split('@')[0];
       const isAuthor = currentUser && currentUser.id === c.user_id;
-      const clCount = cLikeCounts[c.id] || 0;
-      const isLiked = myCommentLikes[c.id] || false;
       return `
         <div class="comment-item">
           <div class="comment-header">
@@ -1110,11 +1090,36 @@
             </span>
           </div>
           <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
-          <button class="comment-like-btn ${isLiked ? 'liked' : ''}" onclick="toggleCommentLike('${c.id}', this)">
-            ${isLiked ? '&#9829;' : '&#9825;'} <span>${clCount}</span>
+          <button class="comment-like-btn" id="cl-${c.id}" onclick="toggleCommentLike('${c.id}', this)">
+            &#9825; <span>0</span>
           </button>
         </div>`;
     }).join('');
+
+    // 댓글 좋아요 비동기 로드
+    try {
+      const commentIds = comments.map(c => c.id);
+      const { data: clData } = await sb
+        .from('comment_likes')
+        .select('comment_id, user_id')
+        .in('comment_id', commentIds);
+      if (clData) {
+        const cLikeCounts = {};
+        const myCommentLikes = {};
+        clData.forEach(l => {
+          cLikeCounts[l.comment_id] = (cLikeCounts[l.comment_id] || 0) + 1;
+          if (currentUser && l.user_id === currentUser.id) myCommentLikes[l.comment_id] = true;
+        });
+        commentIds.forEach(cid => {
+          const btn = document.getElementById('cl-' + cid);
+          if (!btn) return;
+          const count = cLikeCounts[cid] || 0;
+          const liked = myCommentLikes[cid] || false;
+          if (liked) btn.classList.add('liked');
+          btn.innerHTML = (liked ? '&#9829;' : '&#9825;') + ' <span>' + count + '</span>';
+        });
+      }
+    } catch {}
   }
 
   async function submitComment() {
