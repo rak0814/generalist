@@ -99,7 +99,16 @@
       font-size: 15px;
       font-weight: 600;
       color: #111;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .post-item-preview {
+      font-size: 13px;
+      color: #888;
+      margin-bottom: 8px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
@@ -107,18 +116,16 @@
 
     .post-item-meta {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      gap: 12px;
       font-size: 12px;
-      color: #999;
+      color: #aaa;
     }
 
-    .post-item-author { font-weight: 500; color: #666; }
-
-    .post-item-comment {
-      font-size: 11px;
-      color: #6366f1;
-      font-weight: 600;
+    .post-item-meta span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
     }
 
     .empty-state {
@@ -646,6 +653,11 @@
     const isAuthor = currentUser && currentUser.id === post.user_id;
     document.getElementById('detailActions').style.display = isAuthor ? 'flex' : 'none';
 
+    // 조회수 증가
+    if (sb) {
+      sb.rpc('increment_views', { post_id: post.id }).then();
+    }
+
     switchView('viewDetail');
     loadComments(post.id);
     renderCommentForm();
@@ -738,14 +750,33 @@
       return;
     }
 
+    // 댓글 수 조회
+    const postIds = posts.map(p => p.id);
+    const commentCounts = {};
+    if (postIds.length > 0) {
+      const { data: ccData } = await sb
+        .from('comments')
+        .select('post_id')
+        .in('post_id', postIds);
+      if (ccData) {
+        ccData.forEach(c => {
+          commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
+        });
+      }
+    }
+
     container.innerHTML = '<div class="post-list">' + posts.map(post => {
-      const nickname = post.user_nickname || post.user_email.split('@')[0];
+      const preview = post.content ? post.content.replace(/\n/g, ' ') : '';
+      const cc = commentCounts[post.id] || 0;
+      const views = post.views || 0;
       return `
         <div class="post-item" onclick='showDetail(${JSON.stringify(post).replace(/'/g, "&#39;")})'>
           <div class="post-item-title">${escapeHtml(post.title)}</div>
+          <div class="post-item-preview">${escapeHtml(preview)}</div>
           <div class="post-item-meta">
-            <span class="post-item-author">${escapeHtml(nickname)}</span>
             <span>${formatDate(post.created_at)}</span>
+            <span>&#128065; ${views}</span>
+            <span>&#128172; ${cc}</span>
           </div>
         </div>`;
     }).join('') + '</div>';
