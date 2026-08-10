@@ -663,6 +663,7 @@
           loadAdminStats();
         }
         loadNotiBadge();
+        subscribeToNotifications(session.user.id);
       }
     });
     recordVisit();
@@ -728,6 +729,20 @@
         badge.style.display = 'none';
       }
     } catch {}
+  }
+
+  // ── 알림 실시간 구독 ──
+  function subscribeToNotifications(userId) {
+    sb.channel('noti-' + userId)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${userId}`
+      }, () => {
+        loadNotiBadge();
+      })
+      .subscribe();
   }
 
   // ── Load sub-page in iframe ──
