@@ -585,7 +585,7 @@
   function showLoggedIn(user) {
     document.getElementById('authCard').classList.add('hidden');
     document.getElementById('profileCard').classList.remove('hidden');
-    document.getElementById('authSubtitle').style.display = 'none';
+    document.querySelector('.auth-header').style.display = 'none';
 
     const nickname = user.user_metadata?.nickname || user.email.split('@')[0];
     document.getElementById('profileAvatar').textContent = nickname.charAt(0).toUpperCase();
