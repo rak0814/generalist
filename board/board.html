@@ -373,21 +373,28 @@
     /* ── View management ── */
     .view { display: none; }
     .view.active { display: block; }
-    .view.detail-layout.active {
+    .view.fixed-layout.active {
       display: flex;
       flex-direction: column;
       height: 100vh;
     }
-    .view.detail-layout .post-detail {
-      flex: 1;
-      overflow-y: auto;
-    }
-    .view.detail-layout .top-bar {
+    .view.fixed-layout .top-bar {
       flex-shrink: 0;
       position: static;
     }
-    .view.detail-layout .comment-form-fixed {
+    .view.fixed-layout .search-bar {
+      flex-shrink: 0;
+    }
+    .view.fixed-layout .post-detail,
+    .view.fixed-layout #postListContainer {
+      flex: 1;
+      overflow-y: auto;
+    }
+    .view.fixed-layout .comment-form-fixed {
       position: static;
+      flex-shrink: 0;
+    }
+    .view.fixed-layout #paginationContainer {
       flex-shrink: 0;
     }
 
@@ -440,7 +447,7 @@
 <body>
 
 <!-- ============ LIST VIEW ============ -->
-<div class="view active" id="viewList">
+<div class="view fixed-layout active" id="viewList">
   <div class="top-bar">
     <h1>&#128221; 게시판</h1>
     <div class="top-bar-right">
@@ -487,7 +494,7 @@
 </div>
 
 <!-- ============ DETAIL VIEW ============ -->
-<div class="view detail-layout" id="viewDetail">
+<div class="view fixed-layout" id="viewDetail">
   <div class="top-bar">
     <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 목록</button>
     <h1>게시글</h1>
