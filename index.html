@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Generalist - 올인원 유틸리티 앱</title>
   <meta name="description" content="날씨, 환율, AI 채팅, 번역, 여행 정보, 게시판까지 하나로. 설치 없이 바로 쓰는 올인원 유틸리티 웹앱.">
   <meta name="keywords" content="유틸리티, 날씨, 환율, AI 채팅, 번역기, 여행, 게시판, 웹앱, PWA">
@@ -32,6 +32,7 @@
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Malgun Gothic', sans-serif;
       background: #e0e0e0;
+      height: 100dvh;
       height: 100vh;
       display: flex;
       align-items: center;
@@ -39,6 +40,10 @@
       overflow: hidden;
       -webkit-user-select: none;
       user-select: none;
+    }
+
+    @supports (height: 100dvh) {
+      body { height: 100dvh; }
     }
 
     /* ── Phone Frame (PC) ──  */
@@ -60,6 +65,7 @@
       .app {
         width: 100%;
         height: 100vh;
+        height: 100dvh;
         max-height: none;
         border-radius: 0;
         box-shadow: none;
