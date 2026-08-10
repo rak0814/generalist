@@ -439,6 +439,7 @@
         document.getElementById('loginPrompt').classList.add('hidden');
         document.getElementById('newChatBtn').style.display = 'flex';
         loadConversations();
+        subscribeToNewMessages();
       } else {
         document.getElementById('loginPrompt').classList.remove('hidden');
         document.getElementById('emptyState').classList.add('hidden');
@@ -644,6 +645,22 @@
         if (!isSent) {
           sb.from('messages').update({ is_read: true }).eq('id', msg.id).then();
         }
+      })
+      .subscribe();
+  }
+
+  // ── 채팅 목록 실시간 갱신 ──
+  function subscribeToNewMessages() {
+    sb.channel('global-messages')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, (payload) => {
+        // 채팅방 안에 있으면 무시 (이미 채팅방 구독이 처리)
+        if (currentConvId) return;
+        // 채팅 목록 화면이면 갱신
+        loadConversations();
       })
       .subscribe();
   }
