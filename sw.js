@@ -1,4 +1,4 @@
-const CACHE_NAME = 'generalist-v1';
+const CACHE_NAME = 'generalist-v2';
 
 const FILES_TO_CACHE = [
   './',
