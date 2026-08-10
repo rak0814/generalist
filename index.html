@@ -841,12 +841,20 @@
     goHome();
   }
 
-  // ── Splash Screen ──
-  setTimeout(() => {
+  // ── Splash Screen (iOS만, Android는 manifest 스플래시 사용) ──
+  const isAndroidPWA = /Android/i.test(navigator.userAgent) && window.matchMedia('(display-mode: standalone)').matches;
+  if (isAndroidPWA) {
     const splash = document.getElementById('splash');
-    splash.classList.add('fade-out');
-    setTimeout(() => splash.remove(), 400);
-  }, 1200);
+    if (splash) splash.remove();
+  } else {
+    setTimeout(() => {
+      const splash = document.getElementById('splash');
+      if (splash) {
+        splash.classList.add('fade-out');
+        setTimeout(() => splash.remove(), 400);
+      }
+    }, 1200);
+  }
 
   // ── Service Worker ──
   if ('serviceWorker' in navigator) {
