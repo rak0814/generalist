@@ -304,6 +304,37 @@
     .btn-edit { background: #eef2ff; color: #6366f1; }
     .btn-delete { background: #fef2f2; color: #dc2626; }
 
+    /* ── Like ── */
+    .like-section {
+      display: flex;
+      justify-content: center;
+      padding: 16px 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .like-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 24px;
+      border: 1.5px solid #e0e0e0;
+      border-radius: 24px;
+      background: #fff;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .like-btn:active { transform: scale(0.95); }
+
+    .like-btn.liked {
+      border-color: #f43f5e;
+      color: #f43f5e;
+      background: #fff5f7;
+    }
+
     /* ── Comments ── */
     .comments-section {
       border-top: 8px solid #f0f0f0;
@@ -558,6 +589,15 @@
     <h2 class="detail-title" id="detailTitle"></h2>
     <div class="detail-content" id="detailContent"></div>
 
+    <!-- Like -->
+    <div class="like-section">
+      <button class="like-btn" id="likeBtn" onclick="toggleLike()">
+        <span id="likeIcon">&#9825;</span>
+        <span>좋아요</span>
+        <span id="likeCount">0</span>
+      </button>
+    </div>
+
     <!-- Comments -->
     <div class="comments-section">
       <p class="comments-title" id="commentsTitle">댓글 0</p>
@@ -660,7 +700,66 @@
 
     switchView('viewDetail');
     loadComments(post.id);
+    loadLikes(post.id);
     renderCommentForm();
+  }
+
+  // ── Likes ──
+  async function loadLikes(postId) {
+    if (!sb) return;
+    const { count } = await sb
+      .from('likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('post_id', postId);
+    document.getElementById('likeCount').textContent = count || 0;
+
+    // 내가 좋아요 했는지 확인
+    const btn = document.getElementById('likeBtn');
+    if (currentUser) {
+      const { data } = await sb
+        .from('likes')
+        .select('id')
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id)
+        .limit(1);
+      if (data && data.length > 0) {
+        btn.classList.add('liked');
+        document.getElementById('likeIcon').innerHTML = '&#9829;';
+      } else {
+        btn.classList.remove('liked');
+        document.getElementById('likeIcon').innerHTML = '&#9825;';
+      }
+    } else {
+      btn.classList.remove('liked');
+      document.getElementById('likeIcon').innerHTML = '&#9825;';
+    }
+  }
+
+  async function toggleLike() {
+    if (!sb || !currentUser || !currentPost) {
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'go-to-auth' }, '*');
+      }
+      return;
+    }
+
+    const btn = document.getElementById('likeBtn');
+    const postId = currentPost.id;
+
+    if (btn.classList.contains('liked')) {
+      // 좋아요 취소
+      await sb.from('likes').delete()
+        .eq('post_id', postId)
+        .eq('user_id', currentUser.id);
+    } else {
+      // 좋아요
+      await sb.from('likes').insert({
+        post_id: postId,
+        user_id: currentUser.id
+      });
+    }
+
+    loadLikes(postId);
   }
 
   function showEdit() {
@@ -750,9 +849,10 @@
       return;
     }
 
-    // 댓글 수 조회
+    // 댓글 수, 좋아요 수 조회
     const postIds = posts.map(p => p.id);
     const commentCounts = {};
+    const likeCounts = {};
     if (postIds.length > 0) {
       const { data: ccData } = await sb
         .from('comments')
@@ -763,11 +863,21 @@
           commentCounts[c.post_id] = (commentCounts[c.post_id] || 0) + 1;
         });
       }
+      const { data: lcData } = await sb
+        .from('likes')
+        .select('post_id')
+        .in('post_id', postIds);
+      if (lcData) {
+        lcData.forEach(l => {
+          likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+        });
+      }
     }
 
     container.innerHTML = '<div class="post-list">' + posts.map(post => {
       const preview = post.content ? post.content.replace(/\n/g, ' ') : '';
       const cc = commentCounts[post.id] || 0;
+      const lc = likeCounts[post.id] || 0;
       const views = post.views || 0;
       return `
         <div class="post-item" onclick='showDetail(${JSON.stringify(post).replace(/'/g, "&#39;")})'>
@@ -776,6 +886,7 @@
           <div class="post-item-meta">
             <span>${formatDate(post.created_at)}</span>
             <span>&#128065; ${views}</span>
+            <span>&#9825; ${lc}</span>
             <span>&#128172; ${cc}</span>
           </div>
         </div>`;
