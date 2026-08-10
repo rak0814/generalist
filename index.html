@@ -114,6 +114,27 @@
       gap: 6px;
     }
 
+    .noti-btn-wrap {
+      position: relative;
+    }
+
+    .noti-badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      background: #f43f5e;
+      color: #fff;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 16px;
+      height: 16px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+
     .header-btn {
       width: 34px;
       height: 34px;
@@ -453,6 +474,10 @@
       <span class="title">Generalist</span>
     </div>
     <div class="header-right">
+      <div class="noti-btn-wrap" id="notiBtnWrap" style="display:none;">
+        <button class="header-btn" onclick="loadPage('notification/notification.html','noti')" title="알림">&#128276;</button>
+        <div class="noti-badge" id="notiBadge" style="display:none;">0</div>
+      </div>
       <button class="header-btn" id="authBtn" onclick="loadPage('auth/auth.html','auth')" title="로그인" style="font-size:12px;width:auto;padding:0 10px;">로그인</button>
       <button class="header-btn" onclick="openMenu()" title="메뉴">&#9776;</button>
     </div>
@@ -560,7 +585,7 @@
         <div class="menu-item" onclick="closeMenu();">
           <span class="mi-icon">&#128227;</span> 공지사항
         </div>
-        <div class="menu-item" onclick="closeMenu();">
+        <div class="menu-item" onclick="closeMenu(); loadPage('notification/notification.html','noti');">
           <span class="mi-icon">&#128276;</span> 알림
         </div>
         <div class="menu-item" onclick="closeMenu();">
@@ -637,6 +662,7 @@
           document.getElementById('adminStats').classList.remove('hidden');
           loadAdminStats();
         }
+        loadNotiBadge();
       }
     });
     recordVisit();
@@ -676,6 +702,31 @@
         .from('profiles')
         .select('*', { count: 'exact', head: true });
       document.getElementById('statUsers').textContent = (userCount || 0).toLocaleString();
+    } catch {}
+  }
+
+  // ── 알림 뱃지 ──
+  async function loadNotiBadge() {
+    if (!sb) return;
+    try {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.user) return;
+
+      document.getElementById('notiBtnWrap').style.display = 'block';
+
+      const { count } = await sb
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', session.user.id)
+        .eq('is_read', false);
+
+      const badge = document.getElementById('notiBadge');
+      if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
     } catch {}
   }
 
@@ -729,6 +780,7 @@
         } else {
           document.getElementById('adminStats').classList.add('hidden');
         }
+        loadNotiBadge();
         if (e.data.action === 'login') goHome();
       } else {
         document.getElementById('menuName').textContent = '게스트';
@@ -736,10 +788,14 @@
         setAuthBtn(false);
         document.getElementById('menuLogoutSection').style.display = 'none';
         document.getElementById('adminStats').classList.add('hidden');
+        document.getElementById('notiBtnWrap').style.display = 'none';
       }
     }
     if (e.data && e.data.type === 'go-to-auth') {
       loadPage('auth/auth.html', 'auth');
+    }
+    if (e.data && e.data.type === 'noti-read') {
+      loadNotiBadge();
     }
   });
 
@@ -766,6 +822,7 @@
     setAuthBtn(false);
     document.getElementById('menuLogoutSection').style.display = 'none';
     document.getElementById('adminStats').classList.add('hidden');
+    document.getElementById('notiBtnWrap').style.display = 'none';
     goHome();
   }
 
