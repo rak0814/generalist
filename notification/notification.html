@@ -34,16 +34,35 @@
       color: #111;
     }
 
-    .read-all-btn {
+    .header-btns {
+      display: flex;
+      gap: 12px;
+    }
+
+    .header-action-btn {
       border: none;
       background: none;
-      color: #6366f1;
       font-size: 13px;
       font-weight: 600;
       cursor: pointer;
     }
 
-    .read-all-btn:hover { text-decoration: underline; }
+    .header-action-btn:hover { text-decoration: underline; }
+    .header-action-btn.read { color: #6366f1; }
+    .header-action-btn.delete { color: #dc2626; }
+
+    .noti-delete-btn {
+      background: none;
+      border: none;
+      color: #ccc;
+      font-size: 16px;
+      cursor: pointer;
+      flex-shrink: 0;
+      padding: 4px;
+      align-self: center;
+    }
+
+    .noti-delete-btn:hover { color: #dc2626; }
 
     .noti-list {
       flex: 1;
@@ -161,7 +180,10 @@
 
 <div class="noti-header">
   <h2>알림</h2>
-  <button class="read-all-btn" id="readAllBtn" onclick="markAllRead()">모두 읽음</button>
+  <div class="header-btns">
+    <button class="header-action-btn read" id="readAllBtn" onclick="markAllRead()">모두 읽음</button>
+    <button class="header-action-btn delete" id="deleteAllBtn" onclick="deleteAllNotifications()">전체 삭제</button>
+  </div>
 </div>
 
 <div id="loginPrompt" class="login-prompt" style="display:none;">
@@ -231,14 +253,14 @@
       const preview = n.preview ? `<p class="noti-preview">"${escapeHtml(n.preview)}"</p>` : '';
 
       return `
-        <div class="noti-item ${n.is_read ? '' : 'unread'}" onclick="markRead('${n.id}', this)">
+        <div class="noti-item ${n.is_read ? '' : 'unread'}" id="noti-${n.id}" onclick="markRead('${n.id}', this)">
           <div class="noti-icon ${iconClass}">${icon}</div>
           <div class="noti-body">
             <p class="noti-text">${text}</p>
             ${preview}
             <p class="noti-time">${formatTime(n.created_at)}</p>
           </div>
-          <div class="noti-dot ${n.is_read ? 'read' : ''}"></div>
+          <button class="noti-delete-btn" onclick="event.stopPropagation(); deleteNotification('${n.id}')">&#10005;</button>
         </div>`;
     }).join('');
   }
@@ -287,6 +309,29 @@
       const dot = el.querySelector('.noti-dot');
       if (dot) dot.classList.add('read');
     });
+    notifyParentBadge();
+  }
+
+  async function deleteNotification(id) {
+    if (!sb) return;
+    await sb.from('notifications').delete().eq('id', id);
+    const el = document.getElementById('noti-' + id);
+    if (el) el.remove();
+
+    // 목록이 비었으면 빈 상태 표시
+    if (!document.querySelector('.noti-item')) {
+      document.getElementById('emptyState').style.display = 'block';
+      document.getElementById('notiList').prepend(document.getElementById('emptyState'));
+    }
+    notifyParentBadge();
+  }
+
+  async function deleteAllNotifications() {
+    if (!sb || !currentUser) return;
+    if (!confirm('모든 알림을 삭제하시겠습니까?')) return;
+    await sb.from('notifications').delete().eq('user_id', currentUser.id);
+    document.getElementById('notiList').innerHTML = '';
+    document.getElementById('notiList').innerHTML = '<div class="empty-state" id="emptyState"><div class="icon">&#128276;</div><p>알림이 없습니다</p></div>';
     notifyParentBadge();
   }
 
