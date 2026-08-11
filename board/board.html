@@ -391,34 +391,66 @@
     }
 
     .comment-item {
+      display: flex;
+      gap: 10px;
       padding: 12px 0;
       border-bottom: 1px solid #f0f0f0;
     }
 
     .comment-item:last-child { border-bottom: none; }
 
+    .comment-body {
+      flex: 1;
+      min-width: 0;
+    }
+
     .comment-header {
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
 
     .comment-author {
       font-size: 13px;
       font-weight: 600;
-      color: #333;
+      color: #111;
     }
 
     .comment-date {
       font-size: 11px;
-      color: #bbb;
+      color: #999;
     }
 
-    .comment-header-right {
-      margin-left: auto;
+    .comment-text {
+      font-size: 14px;
+      color: #333;
+      line-height: 1.5;
+    }
+
+    .comment-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
       flex-shrink: 0;
     }
+
+    .comment-like-btn {
+      background: none;
+      border: none;
+      font-size: 14px;
+      color: #bbb;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 4px;
+    }
+
+    .comment-like-btn span { font-size: 11px; }
+    .comment-like-btn.liked { color: #f43f5e; }
+    .comment-like-btn:hover { color: #f43f5e; }
 
     .comment-more-btn {
       background: none;
@@ -426,38 +458,11 @@
       font-size: 18px;
       color: #bbb;
       cursor: pointer;
-      padding: 2px 6px;
+      padding: 4px 2px;
       line-height: 1;
     }
 
     .comment-more-btn:hover { color: #666; }
-
-    .comment-text {
-      font-size: 14px;
-      color: #555;
-      line-height: 1.5;
-    }
-
-    .comment-footer {
-      display: flex;
-      justify-content: flex-end;
-      margin-top: 6px;
-    }
-
-    .comment-like-btn {
-      background: none;
-      border: none;
-      font-size: 14px;
-      color: #ccc;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 0;
-    }
-
-    .comment-like-btn.liked { color: #f43f5e; }
-    .comment-like-btn:hover { color: #f43f5e; }
 
     /* 댓글 액션 팝업 */
     .comment-action-popup {
@@ -469,39 +474,47 @@
       border-radius: 16px 16px 0 0;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
       z-index: 100;
-      padding: 8px 0;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      padding: 16px 20px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
 
-    .comment-action-popup .action-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 24px;
-      font-size: 15px;
-      color: #333;
-      cursor: pointer;
-      border: none;
+    .popup-close {
+      position: absolute;
+      top: 12px;
+      right: 16px;
       background: none;
-      width: 100%;
+      border: none;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
     }
 
-    .comment-action-popup .action-item:active { background: #f5f5f5; }
-    .comment-action-popup .action-item.delete { color: #dc2626; }
+    .popup-close:hover { color: #333; }
 
-    .comment-action-popup .action-cancel {
-      display: block;
-      width: calc(100% - 32px);
-      margin: 8px 16px;
+    .popup-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .popup-actions button {
+      flex: 1;
       padding: 14px;
       border: none;
       border-radius: 12px;
-      background: #f0f0f0;
       font-size: 15px;
       font-weight: 600;
-      color: #333;
       cursor: pointer;
-      text-align: center;
+    }
+
+    .popup-actions .action-delete {
+      background: #fef2f2;
+      color: #dc2626;
+    }
+
+    .popup-actions .action-edit {
+      background: #eef2ff;
+      color: #6366f1;
     }
 
     .popup-backdrop {
@@ -855,9 +868,11 @@
     popup.className = 'comment-action-popup';
     popup.id = 'commentActionPopup';
     popup.innerHTML = `
-      <button class="action-item" onclick="hideCommentActions(); editComment('${commentId}')">&#9998; 수정</button>
-      <button class="action-item delete" onclick="hideCommentActions(); deleteComment('${commentId}')">&#128465; 삭제</button>
-      <button class="action-cancel" onclick="hideCommentActions()">취소</button>
+      <button class="popup-close" onclick="hideCommentActions()">&#10005;</button>
+      <div class="popup-actions">
+        <button class="action-delete" onclick="hideCommentActions(); deleteComment('${commentId}')">&#128465; 삭제</button>
+        <button class="action-edit" onclick="hideCommentActions(); editComment('${commentId}')">&#9998; 수정</button>
+      </div>
     `;
 
     document.body.appendChild(backdrop);
@@ -1176,13 +1191,15 @@
       const isAuthor = currentUser && currentUser.id === c.user_id;
       return `
         <div class="comment-item">
-          <div class="comment-header">
-            <span class="comment-author">${escapeHtml(nickname)}</span>
-            <span class="comment-date">${formatDate(c.created_at)}</span>
-            ${isAuthor ? '<div class="comment-header-right"><button class="comment-more-btn" onclick="showCommentActions(\'' + c.id + '\')">&#8942;</button></div>' : ''}
+          <div class="comment-body">
+            <div class="comment-header">
+              <span class="comment-author">${escapeHtml(nickname)}</span>
+              <span class="comment-date">${formatDate(c.created_at)}</span>
+            </div>
+            <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
           </div>
-          <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
-          <div class="comment-footer">
+          <div class="comment-right">
+            ${isAuthor ? '<button class="comment-more-btn" onclick="showCommentActions(\'' + c.id + '\')">&#8942;</button>' : ''}
             <button class="comment-like-btn" id="cl-${c.id}" onclick="toggleCommentLike('${c.id}', this)">
               &#9825; <span>0</span>
             </button>
