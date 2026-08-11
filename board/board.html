@@ -466,7 +466,6 @@
 
     .comment-like-btn span { font-size: 13px; font-weight: 700; }
     .comment-like-btn.liked { color: #f43f5e; }
-    .comment-like-btn:hover { color: #f43f5e; }
 
     .comment-more-btn {
       background: none;
@@ -908,19 +907,21 @@
       return;
     }
 
+    const count = parseInt(btnEl.querySelector('span').textContent) || 0;
+
     if (btnEl.classList.contains('liked')) {
       await sb.from('comment_likes').delete()
         .eq('comment_id', commentId)
         .eq('user_id', currentUser.id);
       btnEl.classList.remove('liked');
-      btnEl.innerHTML = '&#9825; <span>' + Math.max(0, parseInt(btnEl.querySelector('span').textContent) - 1) + '</span>';
+      btnEl.innerHTML = '&#9825; <span>' + Math.max(0, count - 1) + '</span>';
     } else {
       await sb.from('comment_likes').insert({
         comment_id: commentId,
         user_id: currentUser.id
       });
       btnEl.classList.add('liked');
-      btnEl.innerHTML = '&#9829; <span>' + (parseInt(btnEl.querySelector('span').textContent) + 1) + '</span>';
+      btnEl.innerHTML = '&#9829; <span>' + (count + 1) + '</span>';
     }
   }
 
