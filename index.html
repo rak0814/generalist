@@ -202,7 +202,7 @@
 
     .app-scroll {
       display: flex;
-      gap: 14px;
+      gap: 0;
       overflow-x: auto;
       padding-bottom: 8px;
       scroll-snap-type: x mandatory;
@@ -214,6 +214,7 @@
     .app-scroll .app-icon {
       scroll-snap-align: start;
       flex-shrink: 0;
+      width: calc(100% / 4);
     }
 
     .app-grid {
@@ -537,13 +538,13 @@
 
   <!-- Bottom Navigation -->
   <div class="bottom-nav">
-    <button class="nav-item" data-nav="worldmap" onclick="loadPage('travel/world_travel_map.html','worldmap')">
-      <span class="nav-icon">&#127758;</span>
-      <span>여행정보</span>
-    </button>
     <button class="nav-item" data-nav="travel" onclick="loadPage('travel/travel_planner.html','travel')">
       <span class="nav-icon">&#9992;&#65039;</span>
       <span>여행계획</span>
+    </button>
+    <button class="nav-item" data-nav="worldmap" onclick="loadPage('travel/world_travel_map.html','worldmap')">
+      <span class="nav-icon">&#127758;</span>
+      <span>여행정보</span>
     </button>
     <button class="nav-item" data-nav="board" onclick="loadPage('board/board.html','board')">
       <span class="nav-icon">&#128221;</span>
