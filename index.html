@@ -891,9 +891,7 @@
       document.getElementById('statTotal').textContent = (totalCount || 0).toLocaleString();
 
       // 총 회원수
-      const { count: userCount } = await sb
-        .from('profiles')
-        .select('*', { count: 'exact', head: true });
+      const { data: userCount } = await sb.rpc('count_users');
       document.getElementById('statUsers').textContent = (userCount || 0).toLocaleString();
     } catch {}
   }
