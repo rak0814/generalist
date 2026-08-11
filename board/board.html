@@ -474,14 +474,16 @@
       border-radius: 16px 16px 0 0;
       box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
       z-index: 100;
-      padding: 16px 20px;
-      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      padding: 12px 20px;
+    }
+
+    .popup-top {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 8px;
     }
 
     .popup-close {
-      position: absolute;
-      top: 12px;
-      right: 16px;
       background: none;
       border: none;
       font-size: 20px;
@@ -494,7 +496,6 @@
     .popup-actions {
       display: flex;
       gap: 10px;
-      margin-top: 8px;
     }
 
     .popup-actions button {
@@ -868,7 +869,9 @@
     popup.className = 'comment-action-popup';
     popup.id = 'commentActionPopup';
     popup.innerHTML = `
-      <button class="popup-close" onclick="hideCommentActions()">&#10005;</button>
+      <div class="popup-top">
+        <button class="popup-close" onclick="hideCommentActions()">&#10005;</button>
+      </div>
       <div class="popup-actions">
         <button class="action-delete" onclick="hideCommentActions(); deleteComment('${commentId}')">&#128465; 삭제</button>
         <button class="action-edit" onclick="hideCommentActions(); editComment('${commentId}')">&#9998; 수정</button>
