@@ -803,7 +803,7 @@
   function renderHomePost(p, likes) {
     const time = formatHomeTime(p.created_at);
     return `
-      <div class="home-post-item" onclick="loadPage('board/board.html','board')">
+      <div class="home-post-item" onclick="loadPage('board/board.html?post=${p.id}','board')">
         <p class="home-post-title">${escapeHomeHtml(p.title)}</p>
         <div class="home-post-meta">
           <span>${time}</span>
