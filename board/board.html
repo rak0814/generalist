@@ -477,26 +477,27 @@
       padding: 12px 20px;
     }
 
-    .popup-top {
-      display: flex;
-      justify-content: flex-end;
-      margin-bottom: 8px;
-    }
-
-    .popup-close {
-      background: none;
-      border: none;
-      font-size: 20px;
-      color: #999;
-      cursor: pointer;
-    }
-
-    .popup-close:hover { color: #333; }
-
     .popup-actions {
       display: flex;
       gap: 10px;
     }
+
+    .popup-close-btn {
+      width: 36px;
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+      background: #f0f0f0;
+      font-size: 18px;
+      color: #999;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup-close-btn:hover { color: #333; }
 
     .popup-actions button {
       flex: 1;
@@ -869,12 +870,10 @@
     popup.className = 'comment-action-popup';
     popup.id = 'commentActionPopup';
     popup.innerHTML = `
-      <div class="popup-top">
-        <button class="popup-close" onclick="hideCommentActions()">&#10005;</button>
-      </div>
       <div class="popup-actions">
-        <button class="action-delete" onclick="hideCommentActions(); deleteComment('${commentId}')">&#128465; 삭제</button>
-        <button class="action-edit" onclick="hideCommentActions(); editComment('${commentId}')">&#9998; 수정</button>
+        <button class="action-edit" onclick="hideCommentActions(); editComment('${commentId}')">수정</button>
+        <button class="action-delete" onclick="hideCommentActions(); deleteComment('${commentId}')">삭제</button>
+        <button class="popup-close-btn" onclick="hideCommentActions()">&#10005;</button>
       </div>
     `;
 
