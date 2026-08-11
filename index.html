@@ -253,6 +253,67 @@
       line-height: 1.2;
     }
 
+    /* ── Home Post List ── */
+    .home-section {
+      margin-top: 24px;
+    }
+
+    .home-section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .home-section-more {
+      font-size: 12px;
+      color: #aaa;
+      cursor: pointer;
+      border: none;
+      background: none;
+    }
+
+    .home-post-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .home-post-item {
+      background: #fff;
+      border-radius: 12px;
+      padding: 14px 16px;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      transition: box-shadow 0.15s;
+    }
+
+    .home-post-item:active { box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+
+    .home-post-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #111;
+      margin-bottom: 4px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .home-post-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 11px;
+      color: #aaa;
+    }
+
+    .home-post-meta span {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+    }
+
     /* ── Bottom Nav ── */
     .bottom-nav {
       background: #fff;
@@ -529,6 +590,29 @@
           <span class="icon-label">날씨</span>
         </div>
       </div>
+
+      <!-- 인기 게시글 -->
+      <div class="home-section">
+        <div class="home-section-header">
+          <p class="section-title" style="margin-bottom:0;">&#128293; 인기 게시글</p>
+          <button class="home-section-more" onclick="loadPage('board/board.html','board')">더보기</button>
+        </div>
+        <div class="home-post-list" id="popularPosts">
+          <p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">불러오는 중...</p>
+        </div>
+      </div>
+
+      <!-- 최근 게시글 -->
+      <div class="home-section">
+        <div class="home-section-header">
+          <p class="section-title" style="margin-bottom:0;">&#128196; 최근 게시글</p>
+          <button class="home-section-more" onclick="loadPage('board/board.html','board')">더보기</button>
+        </div>
+        <div class="home-post-list" id="recentPosts">
+          <p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">불러오는 중...</p>
+        </div>
+      </div>
+
     </div>
 
     <!-- iframe (sub pages load here) -->
@@ -667,6 +751,85 @@
       await sb.from('visits').insert({ visited_at: new Date().toISOString() });
     } catch {}
   }
+
+  // ── 홈 게시글 로드 ──
+  async function loadHomePosts() {
+    if (!sb) return;
+    try {
+      // 인기 게시글 (좋아요 많은 순)
+      const { data: likeData } = await sb
+        .from('likes')
+        .select('post_id');
+
+      const likeCounts = {};
+      if (likeData) {
+        likeData.forEach(l => {
+          likeCounts[l.post_id] = (likeCounts[l.post_id] || 0) + 1;
+        });
+      }
+
+      const { data: allPosts } = await sb
+        .from('posts')
+        .select('id, title, created_at, views')
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (allPosts && allPosts.length > 0) {
+        // 인기글: 좋아요 순 정렬
+        const popular = [...allPosts]
+          .map(p => ({ ...p, likes: likeCounts[p.id] || 0 }))
+          .filter(p => p.likes > 0)
+          .sort((a, b) => b.likes - a.likes)
+          .slice(0, 3);
+
+        const popEl = document.getElementById('popularPosts');
+        if (popular.length > 0) {
+          popEl.innerHTML = popular.map(p => renderHomePost(p, p.likes)).join('');
+        } else {
+          popEl.innerHTML = '<p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">아직 인기 게시글이 없습니다</p>';
+        }
+
+        // 최근글
+        const recent = allPosts.slice(0, 5);
+        const recEl = document.getElementById('recentPosts');
+        recEl.innerHTML = recent.map(p => renderHomePost(p, likeCounts[p.id] || 0)).join('');
+      } else {
+        document.getElementById('popularPosts').innerHTML = '<p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">게시글이 없습니다</p>';
+        document.getElementById('recentPosts').innerHTML = '<p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">게시글이 없습니다</p>';
+      }
+    } catch {}
+  }
+
+  function renderHomePost(p, likes) {
+    const time = formatHomeTime(p.created_at);
+    return `
+      <div class="home-post-item" onclick="loadPage('board/board.html','board')">
+        <p class="home-post-title">${escapeHomeHtml(p.title)}</p>
+        <div class="home-post-meta">
+          <span>${time}</span>
+          <span>&#128065; ${p.views || 0}</span>
+          <span>&#9825; ${likes}</span>
+        </div>
+      </div>`;
+  }
+
+  function formatHomeTime(dateStr) {
+    const d = new Date(dateStr);
+    const now = new Date();
+    const diff = now - d;
+    if (diff < 60000) return '방금 전';
+    if (diff < 3600000) return Math.floor(diff / 60000) + '분 전';
+    if (diff < 86400000) return Math.floor(diff / 3600000) + '시간 전';
+    if (diff < 172800000) return '어제';
+    return `${d.getMonth() + 1}/${d.getDate()}`;
+  }
+
+  function escapeHomeHtml(str) {
+    if (!str) return '';
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  loadHomePosts();
 
   // ── 관리자 통계 ──
   async function loadAdminStats() {
