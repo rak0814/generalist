@@ -200,6 +200,22 @@
       margin-bottom: 10px;
     }
 
+    .app-scroll {
+      display: flex;
+      gap: 14px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .app-scroll::-webkit-scrollbar { display: none; }
+
+    .app-scroll .app-icon {
+      scroll-snap-align: start;
+      flex-shrink: 0;
+    }
+
     .app-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -469,7 +485,7 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="header-left">
+    <div class="header-left" onclick="goHome()" style="cursor:pointer;">
       <div class="logo">G</div>
       <span class="title">Generalist</span>
     </div>
@@ -489,35 +505,11 @@
     <!-- Home (inline) -->
     <div class="home-page" id="homePage">
 
-      <p class="section-title">Fun</p>
-      <div class="app-grid">
+      <p class="section-title">Apps</p>
+      <div class="app-scroll">
         <div class="app-icon" onclick="loadPage('fun/lotto.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">&#127922;</div>
           <span class="icon-label">로또</span>
-        </div>
-      </div>
-
-      <p class="section-title">Community</p>
-      <div class="app-grid">
-        <div class="app-icon" onclick="loadPage('board/board.html','board')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;">&#128221;</div>
-          <span class="icon-label">게시판</span>
-        </div>
-        <div class="app-icon" onclick="loadPage('chat/user_chat.html','userchat')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#8b5cf6,#6d28d9);color:#fff;">&#128172;</div>
-          <span class="icon-label">1:1 채팅</span>
-        </div>
-      </div>
-
-      <p class="section-title">Utility</p>
-      <div class="app-grid">
-        <div class="app-icon" onclick="loadPage('travel/world_travel_map.html','worldmap')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#0ea5e9,#06b6d4);color:#fff;">🌍</div>
-          <span class="icon-label">여행정보</span>
-        </div>
-        <div class="app-icon" onclick="loadPage('travel/travel_planner.html','travel')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#14b8a6,#10b981);color:#fff;">✈️</div>
-          <span class="icon-label">여행계획</span>
         </div>
         <div class="app-icon" onclick="loadPage('chat/ai_chatbot.html','chat')">
           <div class="icon-box" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;">💬</div>
@@ -545,25 +537,21 @@
 
   <!-- Bottom Navigation -->
   <div class="bottom-nav">
-    <button class="nav-item active" data-nav="home" onclick="goHome()">
-      <span class="nav-icon">&#127968;</span>
-      <span>홈</span>
-    </button>
     <button class="nav-item" data-nav="worldmap" onclick="loadPage('travel/world_travel_map.html','worldmap')">
       <span class="nav-icon">&#127758;</span>
       <span>여행정보</span>
-    </button>    
+    </button>
     <button class="nav-item" data-nav="travel" onclick="loadPage('travel/travel_planner.html','travel')">
       <span class="nav-icon">&#9992;&#65039;</span>
       <span>여행계획</span>
     </button>
-    <button class="nav-item" data-nav="chat" onclick="loadPage('chat/ai_chatbot.html','chat')">
-      <span class="nav-icon">&#128172;</span>
-      <span>AI 채팅</span>
-    </button>
     <button class="nav-item" data-nav="board" onclick="loadPage('board/board.html','board')">
       <span class="nav-icon">&#128221;</span>
       <span>게시판</span>
+    </button>
+    <button class="nav-item" data-nav="userchat" onclick="loadPage('chat/user_chat.html','userchat')">
+      <span class="nav-icon">&#128172;</span>
+      <span>채팅</span>
     </button>
   </div>
 
@@ -759,7 +747,7 @@
     pageFrame.src = '';
     homePage.classList.remove('hidden');
     homePage.scrollTop = 0;
-    setActiveNav('home');
+    setActiveNav('');
   }
 
   // ── Highlight active nav button ──
