@@ -516,21 +516,18 @@
     .popup-actions button {
       flex: 1;
       padding: 14px;
-      border: none;
+      border: 1.5px solid #e8e8e8;
       border-radius: 12px;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      background: #fff;
+      color: #333;
+      transition: background 0.15s;
     }
 
-    .popup-actions .action-delete {
-      background: #fef2f2;
-      color: #dc2626;
-    }
-
-    .popup-actions .action-edit {
-      background: #eef2ff;
-      color: #6366f1;
+    .popup-actions button:active {
+      background: #f5f5f5;
     }
 
     .popup-backdrop {
