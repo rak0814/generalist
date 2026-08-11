@@ -651,16 +651,20 @@
 
   // ── 채팅 목록 실시간 갱신 ──
   function subscribeToNewMessages() {
-    sb.channel('global-messages')
+    sb.channel('global-conversations')
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'conversations'
+      }, () => {
+        if (!currentConvId) loadConversations();
+      })
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
         table: 'messages'
-      }, (payload) => {
-        // 채팅방 안에 있으면 무시 (이미 채팅방 구독이 처리)
-        if (currentConvId) return;
-        // 채팅 목록 화면이면 갱신
-        loadConversations();
+      }, () => {
+        if (!currentConvId) loadConversations();
       })
       .subscribe();
   }
