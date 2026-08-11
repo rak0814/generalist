@@ -211,24 +211,23 @@
 
     .app-scroll::-webkit-scrollbar { display: none; }
 
-    .scroll-indicator {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      padding: 8px 0 4px;
+    .scroll-bar-wrap {
+      width: 60px;
+      height: 4px;
+      background: #e8e8e8;
+      border-radius: 2px;
+      margin: 10px auto 4px;
+      position: relative;
+      overflow: hidden;
     }
 
-    .scroll-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 3px;
-      background: #ddd;
-      transition: all 0.3s;
-    }
-
-    .scroll-dot.active {
-      width: 18px;
+    .scroll-bar-drag {
+      height: 100%;
       background: #6366f1;
+      border-radius: 2px;
+      position: absolute;
+      left: 0;
+      transition: left 0.15s;
     }
 
     .app-scroll .app-icon {
@@ -610,7 +609,9 @@
           <span class="icon-label">날씨</span>
         </div>
       </div>
-      <div class="scroll-indicator" id="scrollIndicator"></div>
+      <div class="scroll-bar-wrap" id="scrollBarWrap">
+        <div class="scroll-bar-drag" id="scrollBarDrag"></div>
+      </div>
 
       <!-- 인기 게시글 -->
       <div class="home-section">
@@ -852,28 +853,22 @@
 
   loadHomePosts();
 
-  // ── 스크롤 인디케이터 ──
+  // ── 스크롤바 ──
   (function() {
     const scroll = document.getElementById('appScroll');
-    const indicator = document.getElementById('scrollIndicator');
-    const items = scroll.querySelectorAll('.app-icon');
-    const perPage = 4;
-    const pages = Math.ceil(items.length / perPage);
+    const wrap = document.getElementById('scrollBarWrap');
+    const drag = document.getElementById('scrollBarDrag');
+    const maxScroll = scroll.scrollWidth - scroll.clientWidth;
 
-    if (pages <= 1) { indicator.style.display = 'none'; return; }
+    if (maxScroll <= 0) { wrap.style.display = 'none'; return; }
 
-    for (let i = 0; i < pages; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'scroll-dot' + (i === 0 ? ' active' : '');
-      indicator.appendChild(dot);
-    }
-
-    const dots = indicator.querySelectorAll('.scroll-dot');
+    const ratio = scroll.clientWidth / scroll.scrollWidth;
+    drag.style.width = (ratio * 100) + '%';
 
     scroll.addEventListener('scroll', function() {
-      const scrollRatio = scroll.scrollLeft / (scroll.scrollWidth - scroll.clientWidth);
-      const activeIdx = Math.round(scrollRatio * (pages - 1));
-      dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+      const scrollRatio = scroll.scrollLeft / maxScroll;
+      const maxLeft = wrap.clientWidth - drag.clientWidth;
+      drag.style.left = (scrollRatio * maxLeft) + 'px';
     });
   })();
 
