@@ -399,6 +399,20 @@
 
     .comment-item:last-child { border-bottom: none; }
 
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
     .comment-body {
       flex: 1;
       min-width: 0;
@@ -1192,6 +1206,7 @@
       const isAuthor = currentUser && currentUser.id === c.user_id;
       return `
         <div class="comment-item">
+          <div class="comment-avatar">${nickname.charAt(0).toUpperCase()}</div>
           <div class="comment-body">
             <div class="comment-header">
               <span class="comment-author">${escapeHtml(nickname)}</span>
