@@ -175,6 +175,20 @@
       align-self: flex-start;
     }
 
+    .msg-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
     .msg-bubble {
       padding: 10px 14px;
       border-radius: 16px;
@@ -427,6 +441,7 @@
   let currentConvId = null;
   let currentChannel = null;
   let foundUser = null;
+  let currentRoomName = '';
 
   // ── 초기화 ──
   async function init() {
@@ -517,6 +532,7 @@
   // ── 채팅방 열기 ──
   async function openRoom(convId, name) {
     currentConvId = convId;
+    currentRoomName = name;
     document.getElementById('roomName').textContent = name;
     document.getElementById('chatListView').style.display = 'none';
     document.getElementById('chatRoomView').style.display = 'flex';
@@ -570,9 +586,11 @@
 
       const isSent = msg.sender_id === currentUser.id;
       const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+      const avatar = !isSent ? `<div class="msg-avatar">${currentRoomName.charAt(0).toUpperCase()}</div>` : '';
 
       html += `
         <div class="msg-row ${isSent ? 'sent' : 'received'}">
+          ${avatar}
           <div class="msg-bubble">${escapeHtml(msg.content)}</div>
           <span class="msg-time">${time}</span>
         </div>`;
@@ -633,9 +651,11 @@
           placeholder.remove();
         }
 
+        const avatar = !isSent ? `<div class="msg-avatar">${currentRoomName.charAt(0).toUpperCase()}</div>` : '';
         const div = document.createElement('div');
         div.className = `msg-row ${isSent ? 'sent' : 'received'}`;
         div.innerHTML = `
+          ${avatar}
           <div class="msg-bubble">${escapeHtml(msg.content)}</div>
           <span class="msg-time">${time}</span>`;
         el.appendChild(div);
