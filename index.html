@@ -211,6 +211,26 @@
 
     .app-scroll::-webkit-scrollbar { display: none; }
 
+    .scroll-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 0 4px;
+    }
+
+    .scroll-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 3px;
+      background: #ddd;
+      transition: all 0.3s;
+    }
+
+    .scroll-dot.active {
+      width: 18px;
+      background: #6366f1;
+    }
+
     .app-scroll .app-icon {
       scroll-snap-align: start;
       flex-shrink: 0;
@@ -568,7 +588,7 @@
     <div class="home-page" id="homePage">
 
       <p class="section-title">Apps</p>
-      <div class="app-scroll">
+      <div class="app-scroll" id="appScroll">
         <div class="app-icon" onclick="loadPage('fun/lotto.html','fun')">
           <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">&#127922;</div>
           <span class="icon-label">로또</span>
@@ -590,6 +610,7 @@
           <span class="icon-label">날씨</span>
         </div>
       </div>
+      <div class="scroll-indicator" id="scrollIndicator"></div>
 
       <!-- 인기 게시글 -->
       <div class="home-section">
@@ -830,6 +851,31 @@
   }
 
   loadHomePosts();
+
+  // ── 스크롤 인디케이터 ──
+  (function() {
+    const scroll = document.getElementById('appScroll');
+    const indicator = document.getElementById('scrollIndicator');
+    const items = scroll.querySelectorAll('.app-icon');
+    const perPage = 4;
+    const pages = Math.ceil(items.length / perPage);
+
+    if (pages <= 1) { indicator.style.display = 'none'; return; }
+
+    for (let i = 0; i < pages; i++) {
+      const dot = document.createElement('div');
+      dot.className = 'scroll-dot' + (i === 0 ? ' active' : '');
+      indicator.appendChild(dot);
+    }
+
+    const dots = indicator.querySelectorAll('.scroll-dot');
+
+    scroll.addEventListener('scroll', function() {
+      const scrollRatio = scroll.scrollLeft / (scroll.scrollWidth - scroll.clientWidth);
+      const activeIdx = Math.round(scrollRatio * (pages - 1));
+      dots.forEach((d, i) => d.classList.toggle('active', i === activeIdx));
+    });
+  })();
 
   // ── 관리자 통계 ──
   async function loadAdminStats() {
