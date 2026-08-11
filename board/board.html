@@ -1194,7 +1194,19 @@
         currentUser = session.user;
       }
 
-      loadPosts();
+      // URL에 post 파라미터가 있으면 해당 글 상세로 바로 이동
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('post');
+      if (postId) {
+        const { data: post } = await sb.from('posts').select('*').eq('id', postId).single();
+        if (post) {
+          showDetail(post);
+        } else {
+          loadPosts();
+        }
+      } else {
+        loadPosts();
+      }
 
       sb.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
