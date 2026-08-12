@@ -488,8 +488,8 @@
       <!-- Input -->
       <div class="input-area border-t p-3">
         <div class="flex gap-2">
-          <textarea id="chatInput" rows="2" placeholder="여행지, 기간, 스타일을 알려주세요..."
-            class="flex-1 min-w-0 resize-none border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" style="font-size:16px;"></textarea>
+          <input type="text" id="chatInput" placeholder="여행지, 기간, 스타일을 알려주세요..."
+            class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" style="font-size:16px;height:42px;">
           <button id="sendBtn"
             class="self-end bg-gray-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-700 transition shrink-0 disabled:opacity-30"
             disabled>
@@ -498,7 +498,6 @@
             </svg>
           </button>
         </div>
-        <p class="text-[11px] text-gray-400 mt-1.5 text-center">수정 요청 가능 : "호텔 등급 올려줘", "자유시간 더 넣어줘"</p>
       </div>
     </div>
 
@@ -520,7 +519,7 @@
         <!-- Header summary -->
         <div class="p-4 bg-white border-b shrink-0">
           <div id="tripHeader" class="mb-3"></div>
-          <div id="dayTabs" class="flex gap-2 overflow-x-auto pb-1"></div>
+          <div id="dayTabs" class="flex gap-2 overflow-x-auto pb-3"></div>
         </div>
 
         <!-- Progress bar during generation -->
@@ -886,10 +885,10 @@ Rules:
               </div>
               <div>
                 <div class="flex items-center gap-2">
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-full text-white" style="background: ${day.color};">D${day.day}</span>
-                  <h3 class="font-bold text-sm">${day.title}</h3>
+                  <span class="text-sm font-bold px-2 py-0.5 rounded-full text-white" style="background: ${day.color};">D${day.day}</span>
+                  <h3 class="font-bold text-base">${day.title}</h3>
                 </div>
-                <p class="text-xs text-gray-500 mt-0.5">${day.subtitle} · <i class="fas fa-map-marker-alt"></i> ${day.city}</p>
+                <p class="text-sm text-gray-500 mt-0.5">${day.subtitle} · <i class="fas fa-map-marker-alt"></i> ${day.city}</p>
               </div>
             </div>
           </div>
@@ -911,7 +910,7 @@ Rules:
               <span class="meal-tag meal-dinner"><i class="fas fa-moon"></i> 석식: ${day.meals.dinner}</span>
             </div>
             <span class="hotel-tag"><i class="fas fa-bed"></i> ${day.hotel}</span>
-            ${day.tip ? `<div class="mt-2 text-xs text-gray-500 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100"><i class="fas fa-lightbulb text-amber-500 mr-1"></i> <strong>TIP:</strong> ${day.tip}</div>` : ''}
+            ${day.tip ? `<div class="mt-2 text-sm text-gray-500 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100" style="display:flex;gap:6px;align-items:flex-start;font-size:14px;"><span style="flex-shrink:0;"><i class="fas fa-lightbulb text-amber-500"></i> <strong>TIP:</strong></span><span>${day.tip}</span></div>` : ''}
           </div>
         </div>
       `;
@@ -1070,7 +1069,7 @@ Rules:
       /* ── Input Handlers ── */
       chatInput.addEventListener('input', () => { sendBtn.disabled = !chatInput.value.trim() || generating; });
       chatInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
+        if (e.key === 'Enter') { e.preventDefault(); if (!sendBtn.disabled) send(); }
       });
       sendBtn.addEventListener('click', send);
 
