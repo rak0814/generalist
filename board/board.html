@@ -763,9 +763,17 @@
   let searchKeyword = '';
 
   // ── UI 함수 ──
+  let currentView = 'viewList';
+
   function switchView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
+    if (viewId !== 'viewList' && currentView === 'viewList') {
+      history.pushState({ view: viewId }, '', '');
+    } else if (viewId !== 'viewList' && currentView !== 'viewList') {
+      history.replaceState({ view: viewId }, '', '');
+    }
+    currentView = viewId;
   }
 
   function showList() {
@@ -786,6 +794,14 @@
     switchView('viewWrite');
     document.getElementById('writeTitle').focus();
   }
+
+  window.addEventListener('popstate', function() {
+    if (currentView !== 'viewList') {
+      document.getElementById('commentFormArea').innerHTML = '';
+      switchView('viewList');
+      loadPosts();
+    }
+  });
 
   function showDetail(post) {
     currentPost = post;
