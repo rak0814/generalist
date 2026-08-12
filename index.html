@@ -715,7 +715,6 @@
       </div>
 
       <div class="admin-stats hidden" id="adminStats">
-        <p class="admin-stats-title">Admin</p>
         <div class="admin-stats-row">
           <span class="label">오늘 접속자</span>
           <span class="value" id="statToday">-</span>
@@ -940,6 +939,7 @@
     pageFrame.classList.add('active');
     pageFrame.src = url;
     setActiveNav(nav);
+    history.pushState({ page: url, nav: nav }, '', '');
   }
 
   // ── Go back to home ──
@@ -950,6 +950,13 @@
     homePage.scrollTop = 0;
     setActiveNav('');
   }
+
+  // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
+  window.addEventListener('popstate', function() {
+    if (pageFrame.classList.contains('active')) {
+      goHome();
+    }
+  });
 
   // ── Highlight active nav button ──
   function setActiveNav(nav) {
