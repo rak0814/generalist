@@ -247,13 +247,13 @@
       display: flex;
       align-items: center;
       gap: 6px;
-      font-size: 12px;
+      font-size: 14px;
     }
 
     /* Tab navigation for days */
     .day-tab {
-      padding: 6px 14px;
-      font-size: 12px;
+      padding: 8px 16px;
+      font-size: 14px;
       font-weight: 600;
       border-radius: 20px;
       cursor: pointer;
@@ -299,7 +299,7 @@
     .mobile-toggle button {
       flex: 1;
       padding: 10px;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 600;
       color: #9ca3af;
       background: none;
@@ -358,7 +358,7 @@
 
       .summary-item {
         flex-shrink: 0;
-        font-size: 11px;
+        font-size: 13px;
       }
 
       /* Day card adjustments */
@@ -368,22 +368,22 @@
       }
 
       .schedule-item {
-        padding: 6px 10px;
-        font-size: 12px;
+        padding: 8px 12px;
+        font-size: 14px;
       }
 
       .schedule-item .time {
-        font-size: 10px;
+        font-size: 12px;
       }
 
       .meal-tag {
-        font-size: 10px;
-        padding: 2px 6px;
+        font-size: 12px;
+        padding: 3px 8px;
       }
 
       .hotel-tag {
-        font-size: 10px;
-        padding: 3px 8px;
+        font-size: 12px;
+        padding: 4px 9px;
       }
 
       /* Day tabs scroll */
@@ -392,13 +392,13 @@
       }
 
       .day-tab {
-        padding: 5px 10px;
-        font-size: 11px;
+        padding: 6px 12px;
+        font-size: 13px;
       }
 
       /* Header adjustments */
       header h1 {
-        font-size: 12px;
+        font-size: 14px;
       }
 
       #printBtn,
@@ -1039,7 +1039,7 @@ Rules:
           if (!trip) {
             removeLoading();
             const preview = esc(raw.length > 1500 ? raw.substring(0, 1500) + '...' : raw);
-            addAiMsgHtml(`<div style="white-space:pre-wrap;font-size:12px;line-height:1.6;">${preview}</div><br><span style="font-size:11px;color:#999;">⚠ JSON 형식이 아니어서 일정표로 변환하지 못했습니다. 위는 AI 원본 응답입니다.</span>`);
+            addAiMsgHtml(`<div style="white-space:pre-wrap;font-size:14px;line-height:1.6;">${preview}</div><br><span style="font-size:13px;color:#999;">⚠ JSON 형식이 아니어서 일정표로 변환하지 못했습니다. 위는 AI 원본 응답입니다.</span>`);
             generating = false;
             sendBtn.disabled = false;
             return;
@@ -1050,7 +1050,7 @@ Rules:
           await animateTrip(trip);
           addAiMsgHtml(`
           <strong>${trip.title}</strong> 완성! &#127881;<br><br>
-          <span style="color:#6b7280;font-size:12px;">
+          <span style="color:#6b7280;font-size:14px;">
             &#128205; ${trip.cities}<br>
             &#127860; 현지 맛집 & 전통요리 포함<br><br>
             수정이 필요하면 말씀해주세요!<br>
@@ -1098,12 +1098,12 @@ Rules:
           .day{margin:24px 0;page-break-inside:avoid} .day h2{color:#8b5cf6;margin-bottom:8px}
           .item{padding:4px 0;border-bottom:1px dashed #eee;font-size:14px}
           .time{color:#8b5cf6;font-weight:bold;min-width:70px;display:inline-block}
-          .meals{background:#f9fafb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:13px}
-          .hotel{color:#065f46;font-size:13px;margin-top:4px}
-          .tip{background:#fffbeb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:12px;color:#92400e}
+          .meals{background:#f9fafb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:15px}
+          .hotel{color:#065f46;font-size:15px;margin-top:4px}
+          .tip{background:#fffbeb;padding:8px 12px;border-radius:8px;margin-top:8px;font-size:14px;color:#92400e}
         </style></head><body><h1>${currentTrip.title}</h1><p>${currentTrip.cities}</p>`;
         currentTrip.days.forEach(day => {
-          html += `<div class="day"><h2>DAY ${day.day} - ${day.title}</h2><p style="color:#888;font-size:12px">${day.subtitle} · ${day.city}</p>`;
+          html += `<div class="day"><h2>DAY ${day.day} - ${day.title}</h2><p style="color:#888;font-size:14px">${day.subtitle} · ${day.city}</p>`;
           day.items.forEach(item => { html += `<div class="item"><span class="time">${item.time}</span> ${item.text}</div>`; });
           html += `<div class="meals">조식: ${day.meals.breakfast} | 중식: ${day.meals.lunch} | 석식: ${day.meals.dinner}</div>`;
           html += `<div class="hotel">숙소: ${day.hotel}</div>`;
