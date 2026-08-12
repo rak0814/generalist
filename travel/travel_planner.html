@@ -163,9 +163,9 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 12px;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
     }
 
@@ -189,9 +189,9 @@
       display: inline-flex;
       align-items: center;
       gap: 4px;
-      padding: 4px 10px;
+      padding: 5px 12px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 500;
       background: #ecfdf5;
       color: #065f46;
@@ -377,13 +377,13 @@
       }
 
       .meal-tag {
-        font-size: 12px;
-        padding: 3px 8px;
+        font-size: 14px;
+        padding: 4px 10px;
       }
 
       .hotel-tag {
-        font-size: 12px;
-        padding: 4px 9px;
+        font-size: 14px;
+        padding: 4px 10px;
       }
 
       /* Day tabs scroll */
@@ -491,7 +491,7 @@
           <input type="text" id="chatInput" placeholder="여행지, 기간, 스타일을 알려주세요..."
             class="flex-1 min-w-0 border rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent" style="font-size:16px;height:42px;">
           <button id="sendBtn"
-            class="self-end bg-gray-900 text-white w-9 h-9 rounded-xl flex items-center justify-center hover:bg-gray-700 transition shrink-0 disabled:opacity-30"
+            class="self-end bg-gray-900 text-white rounded-xl flex items-center justify-center hover:bg-gray-700 transition shrink-0 disabled:opacity-30" style="width:42px;height:42px;"
             disabled>
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19V5m0 0l-7 7m7-7l7 7" />
@@ -903,13 +903,11 @@ Rules:
               </div>
             `).join('')}
           </div>
-          <div class="px-5 py-3 bg-gray-50 border-t">
-            <div class="flex flex-wrap gap-2 mb-2">
+          <div class="px-5 py-3 bg-gray-50 border-t" style="display:flex;flex-direction:column;gap:6px;">
               <span class="meal-tag meal-breakfast"><i class="fas fa-sun"></i> 조식: ${day.meals.breakfast}</span>
               <span class="meal-tag meal-lunch"><i class="fas fa-cloud-sun"></i> 중식: ${day.meals.lunch}</span>
               <span class="meal-tag meal-dinner"><i class="fas fa-moon"></i> 석식: ${day.meals.dinner}</span>
-            </div>
-            <span class="hotel-tag"><i class="fas fa-bed"></i> ${day.hotel}</span>
+              <span class="hotel-tag"><i class="fas fa-bed"></i> ${day.hotel}</span>
             ${day.tip ? `<div class="mt-2 text-sm text-gray-500 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100" style="display:flex;gap:6px;align-items:flex-start;font-size:14px;"><span style="flex-shrink:0;"><i class="fas fa-lightbulb text-amber-500"></i> <strong>TIP:</strong></span><span>${day.tip}</span></div>` : ''}
           </div>
         </div>
