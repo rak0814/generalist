@@ -391,13 +391,15 @@
     }
     .itinerary-body { padding: 10px 14px; }
     .itinerary-day {
+      display: flex;
+      gap: 6px;
       padding: 6px 0;
       font-size: 13px; color: rgba(255,255,255,0.6);
       border-bottom: 1px solid rgba(255,255,255,0.04);
       line-height: 1.5;
     }
     .itinerary-day:last-child { border-bottom: none; }
-    .itinerary-day strong { color: #a5b4fc; font-weight: 600; }
+    .itinerary-day strong { color: #a5b4fc; font-weight: 600; white-space: nowrap; flex-shrink: 0; }
 
     /* 긴급연락처 */
     .emergency-card {
@@ -1659,7 +1661,7 @@ async function selectCountry(name) {
             <div class="itinerary-body" ${idx > 0 ? 'style="display:none;"' : ''}>
               ${it.days.map(d => {
                 const parts = d.split(':');
-                return `<div class="itinerary-day"><strong>${parts[0]}:</strong>${parts.slice(1).join(':')}</div>`;
+                return `<div class="itinerary-day"><strong>${parts[0]}:</strong><span>${parts.slice(1).join(':')}</span></div>`;
               }).join('')}
             </div>
           </div>
