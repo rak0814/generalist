@@ -1314,7 +1314,9 @@
     }
 
     input.value = '';
-    loadComments(currentPost.id);
+    await loadComments(currentPost.id);
+    const detail = document.getElementById('postDetailArea');
+    detail.scrollTop = detail.scrollHeight;
   }
 
   function editComment(commentId, btn) {
