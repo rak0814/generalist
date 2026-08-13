@@ -337,7 +337,8 @@
     if (!confirm('모든 알림을 삭제하시겠습니까?')) return;
     await sb.from('notifications').delete().eq('user_id', currentUser.id);
     document.getElementById('notiList').innerHTML = '';
-    document.getElementById('notiList').innerHTML = '<div class="empty-state" id="emptyState"><div class="icon">&#128276;</div><p>알림이 없습니다</p></div>';
+    document.getElementById('notiList').innerHTML = '<div class="empty-state" id="emptyState"><div class="icon"><i data-lucide="bell" style="width:40px;height:40px;"></i></div><p>알림이 없습니다</p></div>';
+    lucide.createIcons();
     notifyParentBadge();
   }
 
