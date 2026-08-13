@@ -563,7 +563,7 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="header-left" onclick="if(isSubPage){history.back();}else{goHome();}" style="cursor:pointer;">
+    <div class="header-left" onclick="goHome()" style="cursor:pointer;">
       <div class="logo">G</div>
       <span class="title">Generalist</span>
     </div>
@@ -944,6 +944,21 @@
 
   // ── Go back to home ──
   function goHome() {
+    pageFrame.classList.remove('active');
+    pageFrame.src = '';
+    homePage.classList.remove('hidden');
+    homePage.scrollTop = 0;
+    setActiveNav('');
+    document.querySelector('.bottom-nav').style.display = 'flex';
+    loadHomePosts();
+    if (isSubPage) {
+      isSubPage = false;
+      history.back();
+    }
+  }
+
+  // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
+  window.addEventListener('popstate', function() {
     if (isSubPage) {
       pageFrame.classList.remove('active');
       pageFrame.src = '';
@@ -954,11 +969,6 @@
       loadHomePosts();
       isSubPage = false;
     }
-  }
-
-  // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
-  window.addEventListener('popstate', function() {
-    goHome();
   });
 
   // ── Highlight active nav button ──
