@@ -336,9 +336,9 @@
       background: #fff;
       display: flex;
       flex-shrink: 0;
-      padding: 8px 0;
+      padding: 10px 0;
       margin: 0 12px 8px;
-      border-radius: 20px;
+      border-radius: 50px;
       box-shadow: 0 2px 12px rgba(0,0,0,0.1);
       z-index: 10;
     }
@@ -346,19 +346,17 @@
     .nav-item {
       flex: 1;
       display: flex;
-      flex-direction: column;
       align-items: center;
-      gap: 2px;
-      padding: 6px 0;
+      justify-content: center;
+      padding: 4px 0;
       cursor: pointer;
       border: none;
       background: none;
       color: #aaa;
-      font-size: 10px;
       transition: color 0.2s;
     }
 
-    .nav-item .nav-icon { font-size: 20px; line-height: 1; }
+    .nav-item .nav-icon { font-size: 24px; line-height: 1; }
     .nav-item.active { color: #111; }
     .nav-item:not(.active):hover { color: #666; }
 
@@ -644,19 +642,15 @@
   <div class="bottom-nav">
     <button class="nav-item" data-nav="travel" onclick="loadPage('travel/travel_planner.html','travel')">
       <span class="nav-icon">&#9992;&#65039;</span>
-      <span>여행계획</span>
     </button>
     <button class="nav-item" data-nav="worldmap" onclick="loadPage('travel/world_travel_map.html','worldmap')">
       <span class="nav-icon">&#127758;</span>
-      <span>여행정보</span>
     </button>
     <button class="nav-item" data-nav="board" onclick="loadPage('board/board.html','board')">
       <span class="nav-icon">&#128221;</span>
-      <span>게시판</span>
     </button>
     <button class="nav-item" data-nav="userchat" onclick="loadPage('chat/user_chat.html','userchat')">
       <span class="nav-icon">&#128172;</span>
-      <span>채팅</span>
     </button>
   </div>
 
