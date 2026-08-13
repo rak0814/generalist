@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>채팅</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -397,7 +398,7 @@
 <div class="chat-list-view" id="chatListView">
   <div class="chat-header">
     <h2>채팅</h2>
-    <button class="header-btn" id="newChatBtn" onclick="showNewChatModal()" title="새 채팅">&#43;</button>
+    <button class="header-btn" id="newChatBtn" onclick="showNewChatModal()" title="새 채팅"><i data-lucide="plus" style="width:20px;height:20px;"></i></button>
   </div>
 
   <div id="loginPrompt" class="login-prompt hidden">
@@ -417,14 +418,14 @@
 <!-- ── 채팅방 화면 ── -->
 <div class="chat-room-view" id="chatRoomView">
   <div class="chat-header">
-    <button class="header-btn back-btn" onclick="goBack()">&#8249;</button>
+    <button class="header-btn back-btn" onclick="goBack()"><i data-lucide="chevron-left" style="width:22px;height:22px;"></i></button>
     <h2 id="roomName">상대방</h2>
   </div>
   <div class="messages" id="messages"></div>
   <div class="input-bar">
     <div class="input-wrap">
       <input type="text" id="msgInput" placeholder="메시지를 입력하세요" onkeydown="if(event.key==='Enter')sendMessage()">
-      <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()">&#10148;</button>
+      <button class="send-btn" onmousedown="event.preventDefault()" onclick="sendMessage()"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
     </div>
   </div>
 </div>
@@ -837,6 +838,7 @@
   }
 
   init();
+  lucide.createIcons();
 </script>
 
 </body>
