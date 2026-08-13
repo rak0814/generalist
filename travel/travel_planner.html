@@ -486,10 +486,12 @@
       </div>
 
       <!-- Input -->
-      <div style="padding:10px 12px 28px;border-top:1px solid #eee;background:#fff;">
+      <div id="travelInputArea" style="padding:10px 12px 28px;border-top:1px solid #eee;background:#fff;">
         <div style="display:flex;align-items:center;border:1.5px solid #ddd;border-radius:24px;background:#fafafa;padding-right:4px;">
           <input type="text" id="chatInput" placeholder="여행지, 기간, 스타일을 알려주세요..."
-            style="flex:1;min-width:0;padding:12px 16px;border:none;border-radius:24px 0 0 24px;font-size:14px;outline:none;background:transparent;font-family:inherit;">
+            style="flex:1;min-width:0;padding:12px 16px;border:none;border-radius:24px 0 0 24px;font-size:14px;outline:none;background:transparent;font-family:inherit;"
+            onfocus="document.getElementById('travelInputArea').style.paddingBottom='10px'"
+            onblur="document.getElementById('travelInputArea').style.paddingBottom='28px'">
           <button id="sendBtn"
             style="width:36px;height:36px;border:none;border-radius:50%;background:#6366f1;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;"
             >&#10148;</button>
