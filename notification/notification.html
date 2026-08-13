@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>알림</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -188,14 +189,14 @@
 </div>
 
 <div id="loginPrompt" class="login-prompt" style="display:none;">
-  <div class="icon">&#128276;</div>
+  <div class="icon"><i data-lucide="bell" style="width:40px;height:40px;"></i></div>
   <p>로그인 후 이용할 수 있습니다</p>
   <button onclick="goToAuth()">로그인</button>
 </div>
 
 <div class="noti-list" id="notiList">
   <div class="empty-state" id="emptyState">
-    <div class="icon">&#128276;</div>
+    <div class="icon"><i data-lucide="bell" style="width:40px;height:40px;"></i></div>
     <p>알림이 없습니다</p>
   </div>
 </div>
@@ -261,18 +262,19 @@
             ${preview}
             <p class="noti-time">${formatTime(n.created_at)}</p>
           </div>
-          <button class="noti-delete-btn" onclick="event.stopPropagation(); deleteNotification('${n.id}')">&#10005;</button>
+          <button class="noti-delete-btn" onclick="event.stopPropagation(); deleteNotification('${n.id}')"><i data-lucide="x" style="width:14px;height:14px;"></i></button>
         </div>`;
     }).join('');
+    lucide.createIcons();
   }
 
   function getIcon(type) {
     switch (type) {
-      case 'comment': return '&#128172;';
-      case 'like': return '&#9829;';
-      case 'comment_like': return '&#128077;';
-      case 'message': return '&#128233;';
-      default: return '&#128276;';
+      case 'comment': return '<i data-lucide="message-circle" style="width:20px;height:20px;"></i>';
+      case 'like': return '<i data-lucide="heart" style="width:20px;height:20px;"></i>';
+      case 'comment_like': return '<i data-lucide="thumbs-up" style="width:20px;height:20px;"></i>';
+      case 'message': return '<i data-lucide="send" style="width:20px;height:20px;"></i>';
+      default: return '<i data-lucide="bell" style="width:20px;height:20px;"></i>';
     }
   }
 
@@ -362,6 +364,7 @@
   }
 
   init();
+  lucide.createIcons();
 </script>
 
 </body>
