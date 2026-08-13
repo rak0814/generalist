@@ -928,6 +928,9 @@
   }
 
   // ── Load sub-page in iframe ──
+  // 홈 상태 저장
+  history.replaceState({ home: true }, '', '');
+
   function loadPage(url, nav) {
     homePage.classList.add('hidden');
     pageFrame.classList.add('active');
@@ -949,8 +952,10 @@
   }
 
   // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
-  window.addEventListener('popstate', function() {
-    if (pageFrame.classList.contains('active')) {
+  window.addEventListener('popstate', function(e) {
+    if (e.state && e.state.home) {
+      goHome();
+    } else if (!e.state || !e.state.page) {
       goHome();
     }
   });
