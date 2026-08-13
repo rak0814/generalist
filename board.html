@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>게시판</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -29,10 +30,10 @@
       z-index: 10;
     }
 
-    .top-bar h1 { font-size: 17px; font-weight: 700; color: #111; }
+    .top-bar h1 { font-size: 17px; font-weight: 700; color: #111; flex: 1; text-align: center; }
 
     .top-bar-btn {
-      padding: 8px 14px;
+      padding: 6px 12px;
       border: none;
       border-radius: 8px;
       font-size: 13px;
@@ -43,13 +44,34 @@
 
     .top-bar-btn:hover { opacity: 0.85; }
     .btn-primary { background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #fff; }
-    .btn-back { background: #f0f0f0; color: #333; }
+    .btn-back { background: none; color: #333; padding: 0; display: flex; align-items: center; }
 
     .top-bar-right { display: flex; gap: 8px; align-items: center; }
 
+    /* ── FAB (Floating Action Button) ── */
+    .fab-write {
+      position: absolute;
+      bottom: 80px;
+      right: 16px;
+      width: 52px;
+      height: 52px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+    }
+
+    .fab-write:active { transform: scale(0.92); }
+
     /* ── Search Bar ── */
     .search-bar {
-      padding: 12px 16px 4px;
+      padding: 12px 16px;
     }
 
     .search-input-wrap {
@@ -165,7 +187,7 @@
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
     /* ── Post Form ── */
-    .post-form { padding: 20px; }
+    .post-form { padding: 20px; background: #fff; }
 
     .form-group { margin-bottom: 16px; }
 
@@ -202,7 +224,7 @@
     .form-actions {
       display: flex;
       gap: 10px;
-      padding: 12px 20px;
+      padding: 12px 20px 28px;
       background: #fff;
       border-top: 1px solid #eee;
       flex-shrink: 0;
@@ -276,12 +298,16 @@
 
     .detail-actions-top button {
       padding: 6px 12px;
-      border: none;
+      border: 1.5px solid #e8e8e8;
       border-radius: 8px;
       font-size: 12px;
       font-weight: 600;
       cursor: pointer;
+      background: #fff;
+      color: #333;
     }
+
+    .detail-actions-top button:active { background: #f5f5f5; }
 
     .detail-title {
       font-size: 18px;
@@ -300,9 +326,6 @@
       padding: 12px 20px 20px;
       min-height: 80px;
     }
-
-    .btn-edit { background: #eef2ff; color: #6366f1; }
-    .btn-delete { background: #fef2f2; color: #dc2626; }
 
     /* ── Like ── */
     .like-section {
@@ -362,90 +385,190 @@
 
     .comment-form {
       display: flex;
-      gap: 8px;
+      align-items: center;
+      border: 1.5px solid #ddd;
+      border-radius: 24px;
+      background: #fafafa;
+      padding-right: 4px;
+    }
+
+    .comment-form:focus-within {
+      border-color: #ccc;
+      background: #fff;
     }
 
     .comment-form input {
       flex: 1;
       padding: 12px 16px;
-      border: 1.5px solid #e0e0e0;
-      border-radius: 24px;
-      font-size: 13px;
+      border: none;
+      font-size: 14px;
       outline: none;
       font-family: inherit;
-      background: #fafafa;
+      background: transparent;
+      border-radius: 24px 0 0 24px;
     }
 
-    .comment-form input:focus { border-color: #6366f1; background: #fff; }
-
     .comment-form button {
-      padding: 12px 18px;
+      width: 36px;
+      height: 36px;
       border: none;
-      border-radius: 24px;
+      border-radius: 50%;
       background: #6366f1;
       color: #fff;
-      font-size: 13px;
-      font-weight: 600;
+      font-size: 16px;
       cursor: pointer;
-      white-space: nowrap;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
     .comment-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
       padding: 12px 0;
       border-bottom: 1px solid #f0f0f0;
     }
 
     .comment-item:last-child { border-bottom: none; }
 
+    .comment-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .comment-body {
+      flex: 1;
+      min-width: 0;
+    }
+
     .comment-header {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      gap: 8px;
+      margin-bottom: 4px;
     }
 
     .comment-author {
-      font-size: 13px;
+      font-size: 15px;
       font-weight: 600;
-      color: #333;
+      color: #111;
     }
 
     .comment-date {
-      font-size: 11px;
-      color: #bbb;
+      font-size: 13px;
+      color: #999;
     }
 
     .comment-text {
-      font-size: 14px;
-      color: #555;
+      font-size: 15px;
+      color: #333;
       line-height: 1.5;
     }
 
-    .comment-delete {
-      background: none;
-      border: none;
-      color: #ccc;
-      font-size: 12px;
-      cursor: pointer;
-      margin-left: 8px;
+    .comment-right {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-shrink: 0;
     }
-
-    .comment-delete:hover { color: #dc2626; }
 
     .comment-like-btn {
       background: none;
       border: none;
-      font-size: 12px;
-      color: #ccc;
+      font-size: 18px;
+      color: #bbb;
       cursor: pointer;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      gap: 3px;
-      margin-top: 6px;
+      gap: 2px;
+      padding: 4px;
     }
 
+    .comment-like-btn span { font-size: 13px; font-weight: 700; }
     .comment-like-btn.liked { color: #f43f5e; }
-    .comment-like-btn:hover { color: #f43f5e; }
+
+    .comment-more-btn {
+      background: none;
+      border: none;
+      font-size: 22px;
+      color: #bbb;
+      cursor: pointer;
+      padding: 4px 2px;
+      line-height: 1;
+    }
+
+    .comment-more-btn:hover { color: #666; }
+
+    /* 댓글 액션 팝업 */
+    .comment-action-popup {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      border-radius: 16px 16px 0 0;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+      z-index: 100;
+      padding: 12px 20px;
+    }
+
+    .popup-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .popup-close-btn {
+      width: 36px;
+      height: 100%;
+      border: none;
+      border-radius: 12px;
+      background: #f0f0f0;
+      font-size: 18px;
+      color: #999;
+      cursor: pointer;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .popup-close-btn:hover { color: #333; }
+
+    .popup-actions button {
+      flex: 1;
+      padding: 14px;
+      border: 1.5px solid #e8e8e8;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      background: #fff;
+      color: #333;
+      transition: background 0.15s;
+    }
+
+    .popup-actions button:active {
+      background: #f5f5f5;
+    }
+
+    .popup-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 99;
+    }
 
     .comment-login-msg {
       font-size: 13px;
@@ -481,7 +604,10 @@
     .view.fixed-layout .comment-form-fixed {
       position: static;
       flex-shrink: 0;
+      padding-bottom: 28px;
     }
+
+    .view.fixed-layout .comment-form-fixed:focus-within { padding-bottom: 10px; }
     .view.fixed-layout #paginationContainer {
       flex-shrink: 0;
     }
@@ -536,17 +662,14 @@
 
 <!-- ============ LIST VIEW ============ -->
 <div class="view fixed-layout active" id="viewList">
-  <div class="top-bar">
-    <h1>&#128221; 게시판</h1>
-    <div class="top-bar-right">
-      <button class="top-bar-btn btn-primary" onclick="showWrite()">글쓰기</button>
-    </div>
+  <div class="top-bar" style="justify-content:center;">
+    <h1>게시판</h1>
   </div>
 
   <div class="search-bar">
     <div class="search-input-wrap">
       <input type="text" id="searchInput" placeholder="제목 또는 내용 검색" onkeydown="if(event.key==='Enter')doSearch()">
-      <button onclick="doSearch()">&#128269;</button>
+      <button onclick="doSearch()"><i data-lucide="search" style="width:18px;height:18px;"></i></button>
     </div>
   </div>
 
@@ -555,14 +678,15 @@
   </div>
 
   <div id="paginationContainer"></div>
+  <button class="fab-write" onclick="showWrite()"><i data-lucide="pencil" style="width:24px;height:24px;"></i></button>
 </div>
 
 <!-- ============ WRITE VIEW ============ -->
 <div class="view fixed-layout" id="viewWrite">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 뒤로</button>
+    <button class="top-bar-btn btn-back" onclick="showList()"><i data-lucide="chevron-left" style="width:24px;height:24px;"></i></button>
     <h1>새 글 작성</h1>
-    <div style="width:60px;"></div>
+    <div style="width:24px;"></div>
   </div>
 
   <div class="post-form">
@@ -584,9 +708,9 @@
 <!-- ============ DETAIL VIEW ============ -->
 <div class="view fixed-layout" id="viewDetail">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 목록</button>
+    <button class="top-bar-btn btn-back" onclick="showList()"><i data-lucide="chevron-left" style="width:24px;height:24px;"></i></button>
     <h1>게시글</h1>
-    <div style="width:60px;"></div>
+    <div style="width:24px;"></div>
   </div>
 
   <div class="post-detail" id="postDetailArea">
@@ -626,9 +750,9 @@
 <!-- ============ EDIT VIEW ============ -->
 <div class="view fixed-layout" id="viewEdit">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)">&#8592; 뒤로</button>
+    <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)"><i data-lucide="chevron-left" style="width:24px;height:24px;"></i></button>
     <h1>글 수정</h1>
-    <div style="width:60px;"></div>
+    <div style="width:24px;"></div>
   </div>
 
   <div class="post-form">
@@ -671,9 +795,17 @@
   let searchKeyword = '';
 
   // ── UI 함수 ──
+  let currentView = 'viewList';
+
   function switchView(viewId) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.getElementById(viewId).classList.add('active');
+    if (viewId !== 'viewList' && currentView === 'viewList') {
+      history.pushState({ view: viewId }, '', '');
+    } else if (viewId !== 'viewList' && currentView !== 'viewList') {
+      history.replaceState({ view: viewId }, '', '');
+    }
+    currentView = viewId;
   }
 
   function showList() {
@@ -694,6 +826,14 @@
     switchView('viewWrite');
     document.getElementById('writeTitle').focus();
   }
+
+  window.addEventListener('popstate', function() {
+    if (currentView !== 'viewList') {
+      document.getElementById('commentFormArea').innerHTML = '';
+      switchView('viewList');
+      loadPosts();
+    }
+  });
 
   function showDetail(post) {
     currentPost = post;
@@ -760,21 +900,52 @@
 
     const btn = document.getElementById('likeBtn');
     const postId = currentPost.id;
+    const isLiked = btn.classList.contains('liked');
 
-    if (btn.classList.contains('liked')) {
-      // 좋아요 취소
-      await sb.from('likes').delete()
+    if (isLiked) {
+      const { error } = await sb.from('likes').delete()
         .eq('post_id', postId)
         .eq('user_id', currentUser.id);
+      if (error) return;
     } else {
-      // 좋아요
-      await sb.from('likes').insert({
+      const { error } = await sb.from('likes').insert({
         post_id: postId,
         user_id: currentUser.id
       });
+      if (error) return;
     }
 
     loadLikes(postId);
+  }
+
+  // ── 댓글 액션 팝업 ──
+  function showCommentActions(commentId) {
+    // 기존 팝업 제거
+    hideCommentActions();
+
+    const backdrop = document.createElement('div');
+    backdrop.className = 'popup-backdrop';
+    backdrop.onclick = hideCommentActions;
+
+    const popup = document.createElement('div');
+    popup.className = 'comment-action-popup';
+    popup.id = 'commentActionPopup';
+    popup.innerHTML = `
+      <div class="popup-actions">
+        <button class="action-edit" onclick="hideCommentActions(); editComment('${commentId}')">수정</button>
+        <button class="action-delete" onclick="hideCommentActions(); deleteComment('${commentId}')">삭제</button>
+      </div>
+    `;
+
+    document.body.appendChild(backdrop);
+    document.body.appendChild(popup);
+  }
+
+  function hideCommentActions() {
+    const popup = document.getElementById('commentActionPopup');
+    const backdrop = document.querySelector('.popup-backdrop');
+    if (popup) popup.remove();
+    if (backdrop) backdrop.remove();
   }
 
   async function toggleCommentLike(commentId, btnEl) {
@@ -785,20 +956,36 @@
       return;
     }
 
-    if (btnEl.classList.contains('liked')) {
-      await sb.from('comment_likes').delete()
+    const isLiked = btnEl.classList.contains('liked');
+
+    if (isLiked) {
+      const { error } = await sb.from('comment_likes').delete()
         .eq('comment_id', commentId)
         .eq('user_id', currentUser.id);
-      btnEl.classList.remove('liked');
-      btnEl.innerHTML = '&#9825; <span>' + Math.max(0, parseInt(btnEl.querySelector('span').textContent) - 1) + '</span>';
+      if (error) return;
     } else {
-      await sb.from('comment_likes').insert({
+      const { error } = await sb.from('comment_likes').insert({
         comment_id: commentId,
         user_id: currentUser.id
       });
-      btnEl.classList.add('liked');
-      btnEl.innerHTML = '&#9829; <span>' + (parseInt(btnEl.querySelector('span').textContent) + 1) + '</span>';
+      if (error) return;
     }
+
+    // DB에서 최신 카운트 조회
+    const { count } = await sb
+      .from('comment_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('comment_id', commentId);
+    const { data: myLike } = await sb
+      .from('comment_likes')
+      .select('id')
+      .eq('comment_id', commentId)
+      .eq('user_id', currentUser.id)
+      .limit(1);
+
+    const liked = myLike && myLike.length > 0;
+    btnEl.classList.toggle('liked', liked);
+    btnEl.innerHTML = (liked ? '&#9829;' : '&#9825;') + ' <span>' + (count || 0) + '</span>';
   }
 
   function showEdit() {
@@ -924,14 +1111,15 @@
           <div class="post-item-preview">${escapeHtml(preview)}</div>
           <div class="post-item-meta">
             <span>${formatDate(post.created_at)}</span>
-            <span>&#128065; ${views}</span>
-            <span>&#9825; ${lc}</span>
-            <span>&#128172; ${cc}</span>
+            <span><i data-lucide="eye" style="width:13px;height:13px;"></i> ${views}</span>
+            <span><i data-lucide="heart" style="width:13px;height:13px;"></i> ${lc}</span>
+            <span><i data-lucide="message-circle" style="width:13px;height:13px;"></i> ${cc}</span>
           </div>
         </div>`;
     }).join('') + '</div>';
 
     renderPagination();
+    lucide.createIcons();
   }
 
   // ── Pagination UI ──
@@ -1045,9 +1233,10 @@
         <div class="comment-form-fixed">
           <div class="comment-form">
             <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
-            <button onclick="submitComment()">등록</button>
+            <button onmousedown="event.preventDefault()" onclick="submitComment()"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
           </div>
         </div>`;
+      lucide.createIcons();
     } else {
       area.innerHTML = '';
     }
@@ -1082,17 +1271,20 @@
       const isAuthor = currentUser && currentUser.id === c.user_id;
       return `
         <div class="comment-item">
-          <div class="comment-header">
-            <span class="comment-author">${escapeHtml(nickname)}</span>
-            <span>
+          <div class="comment-avatar">${nickname.charAt(0).toUpperCase()}</div>
+          <div class="comment-body">
+            <div class="comment-header">
+              <span class="comment-author">${escapeHtml(nickname)}</span>
               <span class="comment-date">${formatDate(c.created_at)}</span>
-              ${isAuthor ? '<button class="comment-delete" onclick="editComment(\'' + c.id + '\',this)">수정</button><button class="comment-delete" onclick="deleteComment(\'' + c.id + '\')">삭제</button>' : ''}
-            </span>
+            </div>
+            <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
           </div>
-          <div class="comment-text" id="comment-text-${c.id}">${escapeHtml(c.content)}</div>
-          <button class="comment-like-btn" id="cl-${c.id}" onclick="toggleCommentLike('${c.id}', this)">
-            &#9825; <span>0</span>
-          </button>
+          <div class="comment-right">
+            ${isAuthor ? '<button class="comment-more-btn" onclick="showCommentActions(\'' + c.id + '\')">&#8942;</button>' : ''}
+            <button class="comment-like-btn" id="cl-${c.id}" onclick="toggleCommentLike('${c.id}', this)">
+              &#9825; <span>0</span>
+            </button>
+          </div>
         </div>`;
     }).join('');
 
@@ -1144,7 +1336,9 @@
     }
 
     input.value = '';
-    loadComments(currentPost.id);
+    await loadComments(currentPost.id);
+    const detail = document.getElementById('postDetailArea');
+    detail.scrollTop = detail.scrollHeight;
   }
 
   function editComment(commentId, btn) {
@@ -1192,7 +1386,19 @@
         currentUser = session.user;
       }
 
-      loadPosts();
+      // URL에 post 파라미터가 있으면 해당 글 상세로 바로 이동
+      const urlParams = new URLSearchParams(window.location.search);
+      const postId = urlParams.get('post');
+      if (postId) {
+        const { data: post } = await sb.from('posts').select('*').eq('id', postId).single();
+        if (post) {
+          showDetail(post);
+        } else {
+          loadPosts();
+        }
+      } else {
+        loadPosts();
+      }
 
       sb.auth.onAuthStateChange((event, session) => {
         if (session?.user) {
@@ -1207,6 +1413,7 @@
   }
 
   init();
+  lucide.createIcons();
 </script>
 
 </body>
