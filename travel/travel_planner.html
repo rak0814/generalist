@@ -491,8 +491,8 @@
           <input type="text" id="chatInput" placeholder="여행지, 기간, 스타일을 알려주세요..."
             style="flex:1;min-width:0;padding:12px 16px;border:none;border-radius:24px 0 0 24px;font-size:14px;outline:none;background:transparent;font-family:inherit;">
           <button id="sendBtn"
-            style="width:36px;height:36px;border:none;border-radius:50%;background:#6366f1;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:0.3;"
-            disabled>&#10148;</button>
+            style="width:36px;height:36px;border:none;border-radius:50%;background:#6366f1;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;"
+            >&#10148;</button>
         </div>
       </div>
     </div>
@@ -1061,7 +1061,7 @@ Rules:
       }
 
       /* ── Input Handlers ── */
-      chatInput.addEventListener('input', () => { sendBtn.disabled = !chatInput.value.trim() || generating; sendBtn.style.opacity = sendBtn.disabled ? '0.3' : '1'; });
+      chatInput.addEventListener('input', () => {});
       chatInput.addEventListener('keydown', e => {
         if (e.key === 'Enter') { e.preventDefault(); if (!sendBtn.disabled) send(); }
       });
