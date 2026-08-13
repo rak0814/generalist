@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VGT AI Travel Planner</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <style>
     * {
@@ -494,7 +495,7 @@
             onblur="document.getElementById('travelInputArea').style.paddingBottom='28px'">
           <button id="sendBtn"
             style="width:36px;height:36px;border:none;border-radius:50%;background:#6366f1;color:#fff;font-size:16px;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;"
-            >&#10148;</button>
+            ><i data-lucide="send" style="width:16px;height:16px;"></i></button>
         </div>
       </div>
     </div>
@@ -552,6 +553,7 @@
   <!-- ===== JavaScript ===== -->
   <script>
     (function () {
+      lucide.createIcons();
       const $ = id => document.getElementById(id);
       const chatMessages = $('chatMessages');
       const chatInput = $('chatInput');
