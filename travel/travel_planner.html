@@ -904,10 +904,10 @@ Rules:
             `).join('')}
           </div>
           <div class="px-5 py-3 bg-gray-50 border-t" style="display:flex;flex-direction:column;gap:6px;">
-              <span class="meal-tag meal-breakfast"><i class="fas fa-sun"></i> 조식: ${day.meals.breakfast}</span>
-              <span class="meal-tag meal-lunch"><i class="fas fa-cloud-sun"></i> 중식: ${day.meals.lunch}</span>
-              <span class="meal-tag meal-dinner"><i class="fas fa-moon"></i> 석식: ${day.meals.dinner}</span>
-              <span class="hotel-tag"><i class="fas fa-bed"></i> ${day.hotel}</span>
+              <span class="meal-tag meal-breakfast"><i class="fas fa-sun" style="width:16px;text-align:center;display:inline-block;"></i> 조식: ${day.meals.breakfast}</span>
+              <span class="meal-tag meal-lunch"><i class="fas fa-cloud-sun" style="width:16px;text-align:center;display:inline-block;"></i> 중식: ${day.meals.lunch}</span>
+              <span class="meal-tag meal-dinner"><i class="fas fa-moon" style="width:16px;text-align:center;display:inline-block;"></i> 석식: ${day.meals.dinner}</span>
+              <span class="hotel-tag"><i class="fas fa-bed" style="width:16px;text-align:center;display:inline-block;"></i> ${day.hotel}</span>
             ${day.tip ? `<div class="mt-2 text-sm text-gray-500 bg-amber-50 rounded-lg px-3 py-2 border border-amber-100" style="display:flex;gap:6px;align-items:flex-start;font-size:14px;"><span style="flex-shrink:0;"><i class="fas fa-lightbulb text-amber-500"></i> <strong>TIP:</strong></span><span>${day.tip}</span></div>` : ''}
           </div>
         </div>
