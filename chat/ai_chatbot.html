@@ -28,7 +28,7 @@
     .input-wrap:focus-within { border-color: #ccc; background: #fff; }
     .input-area textarea { flex: 1; resize: none; border: none; border-radius: 24px 0 0 24px; padding: 12px 16px; font-size: 14px; font-family: inherit; outline: none; background: transparent; }
     .input-area button { width: 36px; height: 36px; background: #6366f1; color: #fff; border: none; border-radius: 50%; font-size: 16px; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .input-area button:disabled { opacity: .3; cursor: default; }
+    .input-area button:disabled { cursor: default; }
     .input-area button:hover:not(:disabled) { background: #4f46e5; }
     .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100; align-items: center; justify-content: center; }
     .modal-overlay.show { display: flex; }
@@ -64,7 +64,7 @@
   <div class="input-area">
     <div class="input-wrap">
       <textarea id="input" rows="1" placeholder="아무 질문이나 입력하세요..."></textarea>
-      <button id="sendBtn" onclick="send()" disabled>&#10148;</button>
+      <button id="sendBtn" onclick="send()">&#10148;</button>
     </div>
   </div>
 </div>
@@ -168,7 +168,7 @@
     if (getUsage().requests > 0) updateUsageBadge();
 
     /* ── Chat ── */
-    input.addEventListener('input', () => { sendBtn.disabled = !input.value.trim() || busy; });
+    input.addEventListener('input', () => {});
     input.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); if (!sendBtn.disabled) send(); }
     });
