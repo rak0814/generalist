@@ -868,18 +868,19 @@
 
     const btn = document.getElementById('likeBtn');
     const postId = currentPost.id;
+    const isLiked = btn.classList.contains('liked');
 
-    if (btn.classList.contains('liked')) {
-      // 좋아요 취소
-      await sb.from('likes').delete()
+    if (isLiked) {
+      const { error } = await sb.from('likes').delete()
         .eq('post_id', postId)
         .eq('user_id', currentUser.id);
+      if (error) return;
     } else {
-      // 좋아요
-      await sb.from('likes').insert({
+      const { error } = await sb.from('likes').insert({
         post_id: postId,
         user_id: currentUser.id
       });
+      if (error) return;
     }
 
     loadLikes(postId);
@@ -923,22 +924,36 @@
       return;
     }
 
-    const count = parseInt(btnEl.querySelector('span').textContent) || 0;
+    const isLiked = btnEl.classList.contains('liked');
 
-    if (btnEl.classList.contains('liked')) {
-      await sb.from('comment_likes').delete()
+    if (isLiked) {
+      const { error } = await sb.from('comment_likes').delete()
         .eq('comment_id', commentId)
         .eq('user_id', currentUser.id);
-      btnEl.classList.remove('liked');
-      btnEl.innerHTML = '&#9825; <span>' + Math.max(0, count - 1) + '</span>';
+      if (error) return;
     } else {
-      await sb.from('comment_likes').insert({
+      const { error } = await sb.from('comment_likes').insert({
         comment_id: commentId,
         user_id: currentUser.id
       });
-      btnEl.classList.add('liked');
-      btnEl.innerHTML = '&#9829; <span>' + (count + 1) + '</span>';
+      if (error) return;
     }
+
+    // DB에서 최신 카운트 조회
+    const { count } = await sb
+      .from('comment_likes')
+      .select('*', { count: 'exact', head: true })
+      .eq('comment_id', commentId);
+    const { data: myLike } = await sb
+      .from('comment_likes')
+      .select('id')
+      .eq('comment_id', commentId)
+      .eq('user_id', currentUser.id)
+      .limit(1);
+
+    const liked = myLike && myLike.length > 0;
+    btnEl.classList.toggle('liked', liked);
+    btnEl.innerHTML = (liked ? '&#9829;' : '&#9825;') + ' <span>' + (count || 0) + '</span>';
   }
 
   function showEdit() {
