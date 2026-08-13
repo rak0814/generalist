@@ -941,7 +941,7 @@
   }
 
   // ── Go back to home ──
-  function goHome() {
+  function goHome(fromPopstate) {
     pageFrame.classList.remove('active');
     pageFrame.src = '';
     homePage.classList.remove('hidden');
@@ -949,15 +949,14 @@
     setActiveNav('');
     document.querySelector('.bottom-nav').style.display = 'flex';
     loadHomePosts();
+    if (!fromPopstate) {
+      history.pushState({ home: true }, '', '');
+    }
   }
 
   // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
   window.addEventListener('popstate', function(e) {
-    if (e.state && e.state.home) {
-      goHome();
-    } else if (!e.state || !e.state.page) {
-      goHome();
-    }
+    goHome(true);
   });
 
   // ── Highlight active nav button ──
