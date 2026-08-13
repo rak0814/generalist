@@ -563,7 +563,7 @@
 
   <!-- Header -->
   <div class="header">
-    <div class="header-left" onclick="goHome()" style="cursor:pointer;">
+    <div class="header-left" onclick="if(isSubPage){history.back();}else{goHome();}" style="cursor:pointer;">
       <div class="logo">G</div>
       <span class="title">Generalist</span>
     </div>
@@ -928,8 +928,7 @@
   }
 
   // ── Load sub-page in iframe ──
-  // 홈 상태 저장
-  history.replaceState({ home: true }, '', '');
+  let isSubPage = false;
 
   function loadPage(url, nav) {
     homePage.classList.add('hidden');
@@ -937,26 +936,29 @@
     pageFrame.src = url;
     setActiveNav(nav);
     document.querySelector('.bottom-nav').style.display = 'none';
-    history.pushState({ page: url, nav: nav }, '', '');
+    if (!isSubPage) {
+      history.pushState({ page: true }, '', '');
+    }
+    isSubPage = true;
   }
 
   // ── Go back to home ──
-  function goHome(fromPopstate) {
-    pageFrame.classList.remove('active');
-    pageFrame.src = '';
-    homePage.classList.remove('hidden');
-    homePage.scrollTop = 0;
-    setActiveNav('');
-    document.querySelector('.bottom-nav').style.display = 'flex';
-    loadHomePosts();
-    if (!fromPopstate) {
-      history.pushState({ home: true }, '', '');
+  function goHome() {
+    if (isSubPage) {
+      pageFrame.classList.remove('active');
+      pageFrame.src = '';
+      homePage.classList.remove('hidden');
+      homePage.scrollTop = 0;
+      setActiveNav('');
+      document.querySelector('.bottom-nav').style.display = 'flex';
+      loadHomePosts();
+      isSubPage = false;
     }
   }
 
   // ── 브라우저 뒤로가기 (iOS 스와이프 포함) ──
-  window.addEventListener('popstate', function(e) {
-    goHome(true);
+  window.addEventListener('popstate', function() {
+    goHome();
   });
 
   // ── Highlight active nav button ──
@@ -993,7 +995,7 @@
           document.getElementById('adminStats').classList.add('hidden');
         }
         loadNotiBadge();
-        if (e.data.action === 'login') goHome();
+        if (e.data.action === 'login') { if(isSubPage){history.back();}else{goHome();} }
       } else {
         document.getElementById('menuName').textContent = '게스트';
         document.getElementById('menuEmail').textContent = '로그인해주세요';
@@ -1035,7 +1037,7 @@
     document.getElementById('menuLogoutSection').style.display = 'none';
     document.getElementById('adminStats').classList.add('hidden');
     document.getElementById('notiBtnWrap').style.display = 'none';
-    goHome();
+    if(isSubPage){history.back();}else{goHome();}
   }
 
   // ── Splash Screen (iOS만, Android는 manifest 스플래시 사용) ──
