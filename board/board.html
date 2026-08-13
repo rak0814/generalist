@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>게시판</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="../config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -641,7 +642,7 @@
 <!-- ============ LIST VIEW ============ -->
 <div class="view fixed-layout active" id="viewList">
   <div class="top-bar">
-    <h1>&#128221; 게시판</h1>
+    <h1>게시판</h1>
     <div class="top-bar-right">
       <button class="top-bar-btn btn-primary" onclick="showWrite()">글쓰기</button>
     </div>
@@ -650,7 +651,7 @@
   <div class="search-bar">
     <div class="search-input-wrap">
       <input type="text" id="searchInput" placeholder="제목 또는 내용 검색" onkeydown="if(event.key==='Enter')doSearch()">
-      <button onclick="doSearch()">&#128269;</button>
+      <button onclick="doSearch()"><i data-lucide="search" style="width:18px;height:18px;"></i></button>
     </div>
   </div>
 
@@ -664,7 +665,7 @@
 <!-- ============ WRITE VIEW ============ -->
 <div class="view fixed-layout" id="viewWrite">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 뒤로</button>
+    <button class="top-bar-btn btn-back" onclick="showList()"><i data-lucide="chevron-left" style="width:18px;height:18px;"></i> 뒤로</button>
     <h1>새 글 작성</h1>
     <div style="width:60px;"></div>
   </div>
@@ -688,7 +689,7 @@
 <!-- ============ DETAIL VIEW ============ -->
 <div class="view fixed-layout" id="viewDetail">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showList()">&#8592; 목록</button>
+    <button class="top-bar-btn btn-back" onclick="showList()"><i data-lucide="chevron-left" style="width:18px;height:18px;"></i> 목록</button>
     <h1>게시글</h1>
     <div style="width:60px;"></div>
   </div>
@@ -730,7 +731,7 @@
 <!-- ============ EDIT VIEW ============ -->
 <div class="view fixed-layout" id="viewEdit">
   <div class="top-bar">
-    <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)">&#8592; 뒤로</button>
+    <button class="top-bar-btn btn-back" onclick="showDetail(currentPost)"><i data-lucide="chevron-left" style="width:18px;height:18px;"></i> 뒤로</button>
     <h1>글 수정</h1>
     <div style="width:60px;"></div>
   </div>
@@ -1091,14 +1092,15 @@
           <div class="post-item-preview">${escapeHtml(preview)}</div>
           <div class="post-item-meta">
             <span>${formatDate(post.created_at)}</span>
-            <span>&#128065; ${views}</span>
-            <span>&#9825; ${lc}</span>
-            <span>&#128172; ${cc}</span>
+            <span><i data-lucide="eye" style="width:13px;height:13px;"></i> ${views}</span>
+            <span><i data-lucide="heart" style="width:13px;height:13px;"></i> ${lc}</span>
+            <span><i data-lucide="message-circle" style="width:13px;height:13px;"></i> ${cc}</span>
           </div>
         </div>`;
     }).join('') + '</div>';
 
     renderPagination();
+    lucide.createIcons();
   }
 
   // ── Pagination UI ──
@@ -1212,9 +1214,10 @@
         <div class="comment-form-fixed">
           <div class="comment-form">
             <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
-            <button onmousedown="event.preventDefault()" onclick="submitComment()">&#10148;</button>
+            <button onmousedown="event.preventDefault()" onclick="submitComment()"><i data-lucide="send" style="width:16px;height:16px;"></i></button>
           </div>
         </div>`;
+      lucide.createIcons();
     } else {
       area.innerHTML = '';
     }
@@ -1391,6 +1394,7 @@
   }
 
   init();
+  lucide.createIcons();
 </script>
 
 </body>
