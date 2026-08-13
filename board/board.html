@@ -1212,7 +1212,7 @@
         <div class="comment-form-fixed">
           <div class="comment-form">
             <input type="text" id="commentInput" placeholder="댓글을 입력하세요" onkeydown="if(event.key==='Enter')submitComment()">
-            <button onclick="submitComment()">&#10148;</button>
+            <button onmousedown="event.preventDefault()" onclick="submitComment()">&#10148;</button>
           </div>
         </div>`;
     } else {
