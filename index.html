@@ -25,6 +25,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <script src="config.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -448,7 +449,7 @@
     }
 
     .menu-item:hover { background: #f5f5f5; }
-    .menu-item .mi-icon { font-size: 18px; width: 24px; text-align: center; opacity: 0.6; }
+    .menu-item .mi-icon { width: 24px; display: flex; align-items: center; justify-content: center; opacity: 0.6; }
 
     .menu-close {
       width: 32px;
@@ -569,11 +570,11 @@
     </div>
     <div class="header-right">
       <div class="noti-btn-wrap" id="notiBtnWrap" style="display:none;">
-        <button class="header-btn" onclick="loadPage('notification/notification.html','noti')" title="알림">&#128276;</button>
+        <button class="header-btn" onclick="loadPage('notification/notification.html','noti')" title="알림"><i data-lucide="bell" style="width:18px;height:18px;"></i></button>
         <div class="noti-badge" id="notiBadge" style="display:none;">0</div>
       </div>
       <button class="header-btn" id="authBtn" onclick="loadPage('auth/auth.html','auth')" title="로그인" style="font-size:12px;width:auto;padding:0 10px;">로그인</button>
-      <button class="header-btn" onclick="openMenu()" title="메뉴">&#9776;</button>
+      <button class="header-btn" onclick="openMenu()" title="메뉴"><i data-lucide="menu" style="width:18px;height:18px;"></i></button>
     </div>
   </div>
 
@@ -586,23 +587,23 @@
       <p class="section-title">Apps</p>
       <div class="app-scroll" id="appScroll">
         <div class="app-icon" onclick="loadPage('fun/lotto.html','fun')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;">&#127922;</div>
+          <div class="icon-box" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;"><i data-lucide="dice-3" style="width:24px;height:24px;"></i></div>
           <span class="icon-label">로또</span>
         </div>
         <div class="app-icon" onclick="loadPage('chat/ai_chatbot.html','chat')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;">💬</div>
+          <div class="icon-box" style="background:linear-gradient(135deg,#f43f5e,#e11d48);color:#fff;"><i data-lucide="bot" style="width:24px;height:24px;"></i></div>
           <span class="icon-label">AI 채팅</span>
         </div>
         <div class="app-icon" onclick="loadPage('translator/translator.html','util')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;">&#127760;</div>
+          <div class="icon-box" style="background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;"><i data-lucide="languages" style="width:24px;height:24px;"></i></div>
           <span class="icon-label">번역기</span>
         </div>
         <div class="app-icon" onclick="loadPage('currency/currency.html','currency')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;">&#128178;</div>
+          <div class="icon-box" style="background:linear-gradient(135deg,#f59e0b,#ea580c);color:#fff;"><i data-lucide="coins" style="width:24px;height:24px;"></i></div>
           <span class="icon-label">환율</span>
         </div>
         <div class="app-icon" onclick="loadPage('weather/weather.html','weather')">
-          <div class="icon-box" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;">&#9925;</div>
+          <div class="icon-box" style="background:linear-gradient(135deg,#0ea5e9,#3b82f6);color:#fff;"><i data-lucide="cloud-sun" style="width:24px;height:24px;"></i></div>
           <span class="icon-label">날씨</span>
         </div>
       </div>
@@ -641,16 +642,16 @@
   <!-- Bottom Navigation -->
   <div class="bottom-nav">
     <button class="nav-item" data-nav="travel" onclick="loadPage('travel/travel_planner.html','travel')">
-      <span class="nav-icon">&#9992;&#65039;</span>
+      <i data-lucide="plane" style="width:22px;height:22px;"></i>
     </button>
     <button class="nav-item" data-nav="worldmap" onclick="loadPage('travel/world_travel_map.html','worldmap')">
-      <span class="nav-icon">&#127758;</span>
+      <i data-lucide="globe" style="width:22px;height:22px;"></i>
     </button>
     <button class="nav-item" data-nav="board" onclick="loadPage('board/board.html','board')">
-      <span class="nav-icon">&#128221;</span>
+      <i data-lucide="file-text" style="width:22px;height:22px;"></i>
     </button>
     <button class="nav-item" data-nav="userchat" onclick="loadPage('chat/user_chat.html','userchat')">
-      <span class="nav-icon">&#128172;</span>
+      <i data-lucide="message-circle" style="width:22px;height:22px;"></i>
     </button>
   </div>
 
@@ -664,47 +665,47 @@
           <p class="name" id="menuName">게스트</p>
           <p class="email" id="menuEmail">로그인해주세요</p>
         </div>
-        <button class="menu-close" onclick="closeMenu()">&#10005;</button>
+        <button class="menu-close" onclick="closeMenu()"><i data-lucide="x" style="width:18px;height:18px;"></i></button>
       </div>
 
       <div class="menu-section">
         <p class="menu-section-title">Info</p>
         <div class="menu-item" onclick="closeMenu();">
-          <span class="mi-icon">&#128227;</span> 공지사항
+          <span class="mi-icon"><i data-lucide="megaphone" style="width:18px;height:18px;"></i></span> 공지사항
         </div>
         <div class="menu-item" onclick="closeMenu(); loadPage('notification/notification.html','noti');">
-          <span class="mi-icon">&#128276;</span> 알림
+          <span class="mi-icon"><i data-lucide="bell" style="width:18px;height:18px;"></i></span> 알림
         </div>
         <div class="menu-item" onclick="closeMenu();">
-          <span class="mi-icon">&#127381;</span> 업데이트
+          <span class="mi-icon"><i data-lucide="sparkles" style="width:18px;height:18px;"></i></span> 업데이트
         </div>
       </div>
 
       <div class="menu-section">
         <p class="menu-section-title">Support</p>
         <div class="menu-item" onclick="closeMenu();">
-          <span class="mi-icon">&#128172;</span> 문의하기
+          <span class="mi-icon"><i data-lucide="mail" style="width:18px;height:18px;"></i></span> 문의하기
         </div>
         <div class="menu-item" onclick="closeMenu();">
-          <span class="mi-icon">&#10067;</span> 도움말
+          <span class="mi-icon"><i data-lucide="help-circle" style="width:18px;height:18px;"></i></span> 도움말
         </div>
         <div class="menu-item" onclick="closeMenu(); loadPage('legal/terms.html','legal');">
-          <span class="mi-icon">&#128196;</span> 이용약관
+          <span class="mi-icon"><i data-lucide="file-text" style="width:18px;height:18px;"></i></span> 이용약관
         </div>
         <div class="menu-item" onclick="closeMenu(); loadPage('legal/privacy.html','legal');">
-          <span class="mi-icon">&#128274;</span> 개인정보처리방침
+          <span class="mi-icon"><i data-lucide="shield" style="width:18px;height:18px;"></i></span> 개인정보처리방침
         </div>
       </div>
 
       <div class="menu-section">
         <div class="menu-item" onclick="closeMenu();">
-          <span class="mi-icon">&#128712;</span> 앱 정보
+          <span class="mi-icon"><i data-lucide="info" style="width:18px;height:18px;"></i></span> 앱 정보
         </div>
       </div>
 
       <div class="menu-section" id="menuLogoutSection" style="display:none;">
         <div class="menu-item" onclick="closeMenu(); loadPage('auth/auth.html','auth');">
-          <span class="mi-icon">&#128100;</span> 내정보
+          <span class="mi-icon"><i data-lucide="user" style="width:18px;height:18px;"></i></span> 내정보
         </div>
       </div>
 
@@ -1064,6 +1065,9 @@
       }
     }, 1200);
   }
+
+  // ── Lucide Icons ──
+  lucide.createIcons();
 
   // ── Service Worker ──
   if ('serviceWorker' in navigator) {
