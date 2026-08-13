@@ -48,6 +48,27 @@
 
     .top-bar-right { display: flex; gap: 8px; align-items: center; }
 
+    /* ── FAB (Floating Action Button) ── */
+    .fab-write {
+      position: absolute;
+      bottom: 60px;
+      right: 16px;
+      width: 52px;
+      height: 52px;
+      border: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(99,102,241,0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 15;
+    }
+
+    .fab-write:active { transform: scale(0.92); }
+
     /* ── Search Bar ── */
     .search-bar {
       padding: 12px 16px;
@@ -641,9 +662,8 @@
 
 <!-- ============ LIST VIEW ============ -->
 <div class="view fixed-layout active" id="viewList">
-  <div class="top-bar" style="position:relative;justify-content:center;">
+  <div class="top-bar" style="justify-content:center;">
     <h1>게시판</h1>
-    <button class="top-bar-btn btn-primary" onclick="showWrite()" style="position:absolute;right:20px;">글쓰기</button>
   </div>
 
   <div class="search-bar">
@@ -658,6 +678,7 @@
   </div>
 
   <div id="paginationContainer"></div>
+  <button class="fab-write" onclick="showWrite()"><i data-lucide="pencil" style="width:24px;height:24px;"></i></button>
 </div>
 
 <!-- ============ WRITE VIEW ============ -->
