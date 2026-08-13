@@ -230,7 +230,7 @@
       background: #fff;
       border-top: 1px solid #eee;
       flex-shrink: 0;
-      padding-bottom: 10px;
+      padding-bottom: 20px;
     }
 
     .input-bar input {
@@ -536,6 +536,7 @@
     document.getElementById('roomName').textContent = name;
     document.getElementById('chatListView').style.display = 'none';
     document.getElementById('chatRoomView').style.display = 'flex';
+    history.pushState({ room: convId }, '', '');
 
     await loadMessages();
     await markAsRead();
@@ -557,6 +558,12 @@
 
     loadConversations();
   }
+
+  window.addEventListener('popstate', function() {
+    if (currentConvId) {
+      goBack();
+    }
+  });
 
   // ── 메시지 로드 ──
   async function loadMessages() {
@@ -669,22 +676,18 @@
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 ──
+  // ── 채팅 목록 실시간 갱신 (notifications 구독) ──
   function subscribeToNewMessages() {
-    sb.channel('global-conversations')
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'conversations'
-      }, () => {
-        if (!currentConvId) loadConversations();
-      })
+    sb.channel('chat-noti-' + currentUser.id)
       .on('postgres_changes', {
         event: 'INSERT',
         schema: 'public',
-        table: 'messages'
-      }, () => {
-        if (!currentConvId) loadConversations();
+        table: 'notifications',
+        filter: `user_id=eq.${currentUser.id}`
+      }, (payload) => {
+        if (payload.new.type === 'message' && !currentConvId) {
+          loadConversations();
+        }
       })
       .subscribe();
   }
