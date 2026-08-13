@@ -614,7 +614,7 @@
       <!-- 인기 게시글 -->
       <div class="home-section">
         <div class="home-section-header">
-          <p class="section-title" style="margin-bottom:0;">&#128293; 인기 게시글</p>
+          <p class="section-title" style="margin-bottom:0;display:flex;align-items:center;gap:6px;"><i data-lucide="flame" style="width:16px;height:16px;"></i> 인기 게시글</p>
         </div>
         <div class="home-post-list" id="popularPosts">
           <p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">불러오는 중...</p>
@@ -624,7 +624,7 @@
       <!-- 최근 게시글 -->
       <div class="home-section">
         <div class="home-section-header">
-          <p class="section-title" style="margin-bottom:0;">&#128196; 최근 게시글</p>
+          <p class="section-title" style="margin-bottom:0;display:flex;align-items:center;gap:6px;"><i data-lucide="clock" style="width:16px;height:16px;"></i> 최근 게시글</p>
           <button class="home-section-more" onclick="loadPage('board/board.html','board')">더보기</button>
         </div>
         <div class="home-post-list" id="recentPosts">
@@ -812,6 +812,7 @@
         document.getElementById('recentPosts').innerHTML = '<p style="font-size:13px;color:#ccc;text-align:center;padding:12px;">게시글이 없습니다</p>';
       }
     } catch {}
+    lucide.createIcons();
   }
 
   function renderHomePost(p, likes) {
@@ -821,8 +822,8 @@
         <p class="home-post-title">${escapeHomeHtml(p.title)}</p>
         <div class="home-post-meta">
           <span>${time}</span>
-          <span>&#128065; ${p.views || 0}</span>
-          <span>&#9825; ${likes}</span>
+          <span><i data-lucide="eye" style="width:13px;height:13px;"></i> ${p.views || 0}</span>
+          <span><i data-lucide="heart" style="width:13px;height:13px;"></i> ${likes}</span>
         </div>
       </div>`;
   }
