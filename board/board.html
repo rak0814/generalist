@@ -641,18 +641,17 @@
 
 <!-- ============ LIST VIEW ============ -->
 <div class="view fixed-layout active" id="viewList">
-  <div class="top-bar">
+  <div class="top-bar" style="position:relative;">
     <div style="width:24px;"></div>
     <h1>게시판</h1>
-    <div style="width:24px;"></div>
+    <button class="top-bar-btn btn-primary" onclick="showWrite()" style="position:absolute;right:20px;">글쓰기</button>
   </div>
 
-  <div class="search-bar" style="display:flex;gap:8px;align-items:center;">
-    <div class="search-input-wrap" style="flex:1;">
+  <div class="search-bar">
+    <div class="search-input-wrap">
       <input type="text" id="searchInput" placeholder="제목 또는 내용 검색" onkeydown="if(event.key==='Enter')doSearch()">
       <button onclick="doSearch()"><i data-lucide="search" style="width:18px;height:18px;"></i></button>
     </div>
-    <button class="top-bar-btn btn-primary" onclick="showWrite()" style="flex-shrink:0;">글쓰기</button>
   </div>
 
   <div id="postListContainer">
