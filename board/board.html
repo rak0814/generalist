@@ -916,6 +916,9 @@
     }
 
     loadLikes(postId);
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'noti-read' }, '*');
+    }
   }
 
   // ── 댓글 액션 팝업 ──
@@ -986,6 +989,9 @@
     const liked = myLike && myLike.length > 0;
     btnEl.classList.toggle('liked', liked);
     btnEl.innerHTML = (liked ? '&#9829;' : '&#9825;') + ' <span>' + (count || 0) + '</span>';
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'noti-read' }, '*');
+    }
   }
 
   function showEdit() {
