@@ -1657,7 +1657,7 @@ async function selectCountry(name) {
           <div class="itinerary-card">
             <div class="itinerary-title" onclick="var body=this.nextElementSibling;var span=this.querySelector('span');if(body.style.display==='none'){body.style.display='block';span.textContent='닫기 ▲';}else{body.style.display='none';span.textContent='열기 ▼';}">
               ${it.title}
-              <span style="font-size:11px;color:rgba(255,255,255,0.3);">${idx > 0 ? '열기 ▼' : '닫기 ▲'}</span>
+              <span style="font-size:11px;color:rgba(255,255,255,0.3);white-space:nowrap;flex-shrink:0;">${idx > 0 ? '열기 ▼' : '닫기 ▲'}</span>
             </div>
             <div class="itinerary-body" ${idx > 0 ? 'style="display:none;"' : ''}>
               ${it.days.map(d => {
