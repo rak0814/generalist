@@ -214,6 +214,17 @@
         currentUser = session.user;
         document.getElementById('loginPrompt').style.display = 'none';
         loadNotifications();
+        // 실시간 알림 구독
+        sb.channel('noti-page-' + currentUser.id)
+          .on('postgres_changes', {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'notifications',
+            filter: `user_id=eq.${currentUser.id}`
+          }, () => {
+            loadNotifications();
+          })
+          .subscribe();
       } else {
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('emptyState').style.display = 'none';
