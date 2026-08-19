@@ -215,9 +215,11 @@
         document.getElementById('loginPrompt').style.display = 'none';
         loadNotifications();
         // 부모에서 새 알림 수신
-        window.onParentNotification = function() {
-          loadNotifications();
-        };
+        window.addEventListener('message', function(e) {
+          if (e.data && e.data.type === 'new-notification') {
+            loadNotifications();
+          }
+        });
       } else {
         document.getElementById('loginPrompt').style.display = 'block';
         document.getElementById('emptyState').style.display = 'none';
