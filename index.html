@@ -931,10 +931,10 @@
 
         // iframe에 새 알림 전달
         try {
-          const iframeWin = pageFrame.contentWindow;
-          if (iframeWin && iframeWin.onParentNotification) {
-            iframeWin.onParentNotification(payload.new.type);
-          }
+          pageFrame.contentWindow.postMessage({
+            type: 'new-notification',
+            notiType: payload.new.type
+          }, '*');
         } catch {}
       })
       .subscribe();
