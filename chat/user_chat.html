@@ -702,12 +702,12 @@
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 (부모에서 호출) ──
-  window.onParentNotification = function(notiType) {
-    if (notiType === 'message' && !currentConvId) {
-      loadConversations();
+  // ── 채팅 목록 실시간 갱신 (부모에서 postMessage 수신) ──
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'new-notification' && e.data.notiType === 'message') {
+      if (!currentConvId) loadConversations();
     }
-  };
+  });
   function subscribeToNewMessages() {}
 
   // ── 읽음 처리 ──
