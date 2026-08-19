@@ -708,12 +708,17 @@
 
   // ── 읽음 처리 ──
   async function markAsRead() {
-    if (!sb || !currentUser || !currentConvId) return;
-    await sb.from('messages')
+    if (!sb || !currentUser || !currentConvId) {
+      console.log('markAsRead 스킵:', { sb: !!sb, currentUser: !!currentUser, currentConvId });
+      return;
+    }
+    const { data, error, count } = await sb.from('messages')
       .update({ is_read: true })
       .eq('conversation_id', currentConvId)
       .neq('sender_id', currentUser.id)
-      .eq('is_read', false);
+      .eq('is_read', false)
+      .select();
+    console.log('markAsRead 결과:', { data, error, count, convId: currentConvId, userId: currentUser.id });
   }
 
   // ── 새 채팅 모달 ──
