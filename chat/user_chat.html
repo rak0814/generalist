@@ -677,22 +677,32 @@
         el.appendChild(div);
         el.scrollTop = el.scrollHeight;
 
-        // 받은 메시지 읽음 처리
+        // 받은 메시지 읽음 처리 + 알림 삭제
         if (!isSent) {
           sb.from('messages').update({ is_read: true }).eq('id', msg.id).then();
+          // 해당 메시지의 알림도 삭제
+          setTimeout(async () => {
+            await sb.from('notifications')
+              .delete()
+              .eq('user_id', currentUser.id)
+              .eq('type', 'message')
+              .eq('preview', msg.content.substring(0, 50));
+            if (window.parent !== window) {
+              window.parent.postMessage({ type: 'noti-read' }, '*');
+            }
+          }, 500);
         }
       })
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 (부모에서 알림 수신) ──
-  function subscribeToNewMessages() {
-    window.addEventListener('message', function(e) {
-      if (e.data && e.data.type === 'new-notification' && e.data.notiType === 'message') {
-        if (!currentConvId) loadConversations();
-      }
-    });
-  }
+  // ── 채팅 목록 실시간 갱신 (부모에서 호출) ──
+  window.onParentNotification = function(notiType) {
+    if (notiType === 'message' && !currentConvId) {
+      loadConversations();
+    }
+  };
+  function subscribeToNewMessages() {}
 
   // ── 읽음 처리 ──
   async function markAsRead() {
