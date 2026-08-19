@@ -685,13 +685,33 @@
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 (폴링) ──
-  let chatPollTimer = null;
+  // ── 채팅 목록 실시간 갱신 ──
   function subscribeToNewMessages() {
-    if (chatPollTimer) clearInterval(chatPollTimer);
-    chatPollTimer = setInterval(() => {
+    // Realtime 구독
+    sb.channel('chat-list-' + currentUser.id)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${currentUser.id}`
+      }, (payload) => {
+        if (payload.new.type === 'message' && !currentConvId) {
+          loadConversations();
+        }
+      })
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages'
+      }, () => {
+        if (!currentConvId) loadConversations();
+      })
+      .subscribe();
+
+    // 폴링 백업
+    setInterval(() => {
       if (!currentConvId) loadConversations();
-    }, 3000);
+    }, 5000);
   }
 
   // 페이지 포커스 시 즉시 갱신
