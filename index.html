@@ -924,7 +924,16 @@
         table: 'notifications',
         filter: `user_id=eq.${userId}`
       }, (payload) => {
-        loadNotiBadge();
+        // 채팅방 안에 있으면 메시지 알림 스킵
+        let inChatRoom = false;
+        try {
+          inChatRoom = pageFrame.contentWindow && pageFrame.contentWindow.currentConvId;
+        } catch {}
+
+        if (!(payload.new.type === 'message' && inChatRoom)) {
+          loadNotiBadge();
+        }
+
         // iframe에 새 알림 전달
         try {
           const iframeWin = pageFrame.contentWindow;
