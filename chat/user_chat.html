@@ -702,13 +702,26 @@
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 (부모에서 postMessage 수신) ──
-  window.addEventListener('message', function(e) {
-    if (e.data && e.data.type === 'new-notification' && e.data.notiType === 'message') {
-      if (!currentConvId) loadConversations();
-    }
-  });
-  function subscribeToNewMessages() {}
+  // ── 채팅 목록 실시간 갱신 ──
+  let lastConvCheck = '';
+  function subscribeToNewMessages() {
+    setInterval(async () => {
+      if (!currentConvId && sb && currentUser) {
+        // last_message_at 변경 감지
+        const { data } = await sb
+          .from('conversations')
+          .select('last_message_at')
+          .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
+          .order('last_message_at', { ascending: false })
+          .limit(1);
+        const latest = data && data[0] ? data[0].last_message_at : '';
+        if (latest && latest !== lastConvCheck) {
+          lastConvCheck = latest;
+          loadConversations();
+        }
+      }
+    }, 3000);
+  }
 
   // ── 읽음 처리 ──
   async function markAsRead() {
