@@ -923,8 +923,15 @@
         schema: 'public',
         table: 'notifications',
         filter: `user_id=eq.${userId}`
-      }, () => {
+      }, (payload) => {
         loadNotiBadge();
+        // iframe에 새 알림 전달
+        try {
+          pageFrame.contentWindow.postMessage({
+            type: 'new-notification',
+            notiType: payload.new.type
+          }, '*');
+        } catch {}
       })
       .subscribe();
   }
