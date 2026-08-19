@@ -691,8 +691,13 @@
     if (chatPollTimer) clearInterval(chatPollTimer);
     chatPollTimer = setInterval(() => {
       if (!currentConvId) loadConversations();
-    }, 5000);
+    }, 3000);
   }
+
+  // 페이지 포커스 시 즉시 갱신
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden && currentUser && !currentConvId) loadConversations();
+  });
 
   // ── 읽음 처리 ──
   async function markAsRead() {
