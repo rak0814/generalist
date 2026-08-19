@@ -927,10 +927,10 @@
         loadNotiBadge();
         // iframe에 새 알림 전달
         try {
-          pageFrame.contentWindow.postMessage({
-            type: 'new-notification',
-            notiType: payload.new.type
-          }, '*');
+          const iframeWin = pageFrame.contentWindow;
+          if (iframeWin && iframeWin.onParentNotification) {
+            iframeWin.onParentNotification(payload.new.type);
+          }
         } catch {}
       })
       .subscribe();
