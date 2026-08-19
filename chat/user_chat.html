@@ -558,30 +558,22 @@
 
   }
 
-  async function goBack() {
-    // 먼저 읽음 처리 완료
-    if (currentConvId) {
-      await sb.from('messages')
-        .update({ is_read: true })
-        .eq('conversation_id', currentConvId)
-        .neq('sender_id', currentUser.id)
-        .eq('is_read', false);
-    }
-
-    document.getElementById('chatRoomView').style.display = 'none';
-    document.getElementById('chatListView').style.display = 'flex';
-
+  function goBack() {
     if (currentChannel) {
       sb.removeChannel(currentChannel);
       currentChannel = null;
     }
-
     currentConvId = null;
+
+    document.getElementById('chatRoomView').style.display = 'none';
+    document.getElementById('chatListView').style.display = 'flex';
+
     if (window.parent !== window) {
       window.parent.postMessage({ type: 'chat-room-state', inRoom: false }, '*');
     }
 
-    await loadConversations();
+    // 약간 딜레이 후 목록 갱신 (DB 반영 대기)
+    setTimeout(() => loadConversations(), 300);
   }
 
   window.addEventListener('popstate', function() {
