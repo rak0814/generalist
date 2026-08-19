@@ -544,6 +544,9 @@
   async function openRoom(convId, name) {
     currentConvId = convId;
     currentRoomName = name;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'chat-room-state', inRoom: true }, '*');
+    }
     document.getElementById('roomName').textContent = name;
     document.getElementById('chatListView').style.display = 'none';
     document.getElementById('chatRoomView').style.display = 'flex';
@@ -559,6 +562,9 @@
     document.getElementById('chatRoomView').style.display = 'none';
     document.getElementById('chatListView').style.display = 'flex';
     currentConvId = null;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'chat-room-state', inRoom: false }, '*');
+    }
 
     if (currentChannel) {
       sb.removeChannel(currentChannel);
