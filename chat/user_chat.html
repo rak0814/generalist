@@ -558,20 +558,30 @@
 
   }
 
-  function goBack() {
+  async function goBack() {
+    // 먼저 읽음 처리 완료
+    if (currentConvId) {
+      await sb.from('messages')
+        .update({ is_read: true })
+        .eq('conversation_id', currentConvId)
+        .neq('sender_id', currentUser.id)
+        .eq('is_read', false);
+    }
+
     document.getElementById('chatRoomView').style.display = 'none';
     document.getElementById('chatListView').style.display = 'flex';
-    currentConvId = null;
-    if (window.parent !== window) {
-      window.parent.postMessage({ type: 'chat-room-state', inRoom: false }, '*');
-    }
 
     if (currentChannel) {
       sb.removeChannel(currentChannel);
       currentChannel = null;
     }
 
-    loadConversations();
+    currentConvId = null;
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'chat-room-state', inRoom: false }, '*');
+    }
+
+    await loadConversations();
   }
 
   window.addEventListener('popstate', function() {
@@ -702,14 +712,7 @@
       .subscribe();
   }
 
-  // ── 채팅 목록 실시간 갱신 ──
-  function subscribeToNewMessages() {
-    setInterval(() => {
-      if (!currentConvId && sb && currentUser) {
-        loadConversations();
-      }
-    }, 3000);
-  }
+  function subscribeToNewMessages() {}
 
   // ── 읽음 처리 ──
   async function markAsRead() {
