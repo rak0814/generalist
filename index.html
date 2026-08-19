@@ -925,12 +925,7 @@
         filter: `user_id=eq.${userId}`
       }, (payload) => {
         // 채팅방 안에 있으면 메시지 알림 스킵
-        let inChatRoom = false;
-        try {
-          inChatRoom = pageFrame.contentWindow && pageFrame.contentWindow.currentConvId;
-        } catch {}
-
-        if (!(payload.new.type === 'message' && inChatRoom)) {
+        if (!(payload.new.type === 'message' && isInChatRoom)) {
           loadNotiBadge();
         }
 
@@ -947,6 +942,7 @@
 
   // ── Load sub-page in iframe ──
   let isSubPage = false;
+  let isInChatRoom = false;
 
   function loadPage(url, nav) {
     homePage.classList.add('hidden');
@@ -971,6 +967,7 @@
     loadHomePosts();
     if (isSubPage) {
       isSubPage = false;
+      isInChatRoom = false;
       history.back();
     }
   }
@@ -1038,6 +1035,9 @@
     }
     if (e.data && e.data.type === 'noti-read') {
       loadNotiBadge();
+    }
+    if (e.data && e.data.type === 'chat-room-state') {
+      isInChatRoom = e.data.inRoom;
     }
   });
 
